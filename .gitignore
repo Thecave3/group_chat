@@ -8,6 +8,9 @@
 *.gch
 *.pch
 
+#Directories
+build/*
+
 # Libraries
 *.lib
 *.a
