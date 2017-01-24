@@ -5,11 +5,11 @@ CMN= common.h
 all: clean server unix windows
 
 windows:
-	$(CC)  $(LDFLAGS) $(CMN) windows_client/main.c -o windows
+	$(CC)  $(LDFLAGS) $(CMN) windows_client.c -o windows
 unix:
-	$(CC) $(LDFLAGS) $(CMN) unix_client/main.c -o unix
+	$(CC) $(LDFLAGS) $(CMN) unix_client.c -o unix
 server:
-	$(CC) $(LDFLAGS) $(CMN) central_server/main.c -o server
+	$(CC) $(LDFLAGS) $(CMN) central_server.c -o server
 
 
 clean:
