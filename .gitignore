@@ -9,7 +9,7 @@
 *.pch
 
 #Directories
-build/*
+./build/*
 
 # Libraries
 *.lib
