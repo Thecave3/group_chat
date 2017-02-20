@@ -26,3 +26,5 @@ sviluppare per uno dei due sistemi.
 
 
 Officially we're coding only UNIX client but in future Windows could be supported.
+
+Tu puzzi
