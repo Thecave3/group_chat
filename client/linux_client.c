@@ -1,4 +1,4 @@
-#include "libs/common.h"
+#include "../libs/common.h"
 
 int main(int argc,
          char* argv[])

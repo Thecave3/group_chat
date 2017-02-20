@@ -1,6 +1,12 @@
 # group_chat
 This repo contains the project for "Sistemi Operativi" - Sapienza Univ. of Rome ay2016/2017
 
+Officially we're coding only UNIX client, but maybe we'll create also the Windows client.
+
+Server side is by Giorgio Dramis (che puzza).
+Client side is by Andrea Lacava.
+
+
 Here is the official request done by our teacher:
 
 Talk
@@ -23,8 +29,3 @@ l'applicazione client che per l'applicazione server.
 
 Per progetti misti Unix/Windows e' a scelta quale delle due applicazioni
 sviluppare per uno dei due sistemi.
-
-
-Officially we're coding only UNIX client but in future Windows could be supported.
-
-Tu puzzi
