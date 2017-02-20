@@ -3,5 +3,5 @@
 int main(int argc,
          char* argv[])
 {
-  printf("Linux Client");
+  printf("Windows Client");
 }
