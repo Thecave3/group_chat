@@ -7,8 +7,15 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <ncurses.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 
 #define ERR_MSG_LENGTH 1024
+#define SERVER_ADDRESS "127.0.0.1"
+#define SERVER_PORT 3000
 
 #define GENERIC_ERROR_HELPER(cond, errCode, msg) do {               \
         if (cond) {                                                 \

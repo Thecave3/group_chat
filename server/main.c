@@ -1,4 +1,4 @@
-#include "libs/common.h"
+#include "../libs/common.h"
 
 int nclients;
 
@@ -19,12 +19,12 @@ int add_client_routine(int client_desc,
 		       struct sockaddr_in client_addr);
 
 int main(int argc,
-	 char const *argv[]) 
+	 char const *argv[])
 {
 	int 			server_desc , client_sock, ret;
 	struct sockaddr_in	server_addr , client_addr;
   				nclients = 0;
-	
+
 	// Controllo sui valori in input
 	if (argc != 2) {
 		fprintf(stderr, "usage: central_server: PORT\n");
@@ -35,7 +35,7 @@ int main(int argc,
 		fprintf(stderr, "Incorrect port value\n");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	// Inizializzazione porta socket
 	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
 	if (socket_desc == -1) {
@@ -51,7 +51,7 @@ int main(int argc,
 		exit(EXIT_FAILURE);
 	}
 	listen(socket_desc , MAX_CONN_QUEUE);
-  
+
 	// Ciclo sentinella
 	while(1) {
     		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
@@ -60,9 +60,9 @@ int main(int argc,
         		return 1;
     		}
 		fprintf(stderr, "Incoming connection");
-		
+
 		// Routine di smistamento
-		
+
   	}
   	exit(EXIT_SUCCESS);
 }
@@ -80,7 +80,7 @@ int add_client_routine(int client_desc,
 			int((socket_addr.sin_addr.s_addr&0xFF00)>>8),
   			int((socket_addr.sin_addr.s_addr&0xFF0000)>>16),
   			int((socket_addr.sin_addr.s_addr&0xFF000000)>>24));
-		
+
 	}
 	else {
 		last_client->next = malloc(sizeof(client_t));
@@ -109,4 +109,3 @@ char* get_ip(struct sockaddr_in socket_addr) {
   		int((socket_addr.sin_addr.s_addr&0xFF000000)>>24));
 	return ip;
 };
-
