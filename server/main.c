@@ -21,9 +21,12 @@ int add_client_routine(int client_desc,
 int main(int argc,
 	 char const *argv[])
 {
-	int 			server_desc , client_sock, ret;
+	int 			server_desc , client_sock, client_addr_len, ret;
 	struct sockaddr_in	server_addr , client_addr;
-  				nclients = 0;
+  				
+	nclients = 0;
+	client_list = malloc(sizeof(client_t));
+	client_addr_len = sizeof(client_addr);
 
 	// Controllo sui valori in input
 	if (argc != 2) {
@@ -54,49 +57,27 @@ int main(int argc,
 
 	// Ciclo sentinella
 	while(1) {
-    		client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
+    		client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
     		if (client_sock < 0) {
         		perror("Unable to connect to client");
         		return 1;
     		}
 		fprintf(stderr, "Incoming connection");
-
-		// Routine di smistamento
-
+		
+		client_l thread_arg = malloc(sizeof(client_t));
+		thread_arg-> client_desc = client_desc;
+		thread_arg-> client_addr = client_addr;
+		pthread_t* init_client_thread = malloc(pthread_t);
+		ret = ptread_create(init_client_thread, NULL, init_client_routine, thread_arg);
+		memset(client_addr, 0, sizeof(client_addr));
   	}
   	exit(EXIT_SUCCESS);
 }
 
-int add_client_routine(int client_desc,
-		       struct sockaddr_in client_addr)
+void *init_client_routine(void *arg)
 {
-	if (nclients == 0) {
-		client_list = malloc(sizeof(client_t));
-		client_list->client_id = nclients;
-		client_list->client_desc = client_desc;
-		fprintf(last_client->client_ip,
-			"%d.%d.%d.%d\0",
-			int(socket_addr.sin_addr.s_addr&0xFF),
-			int((socket_addr.sin_addr.s_addr&0xFF00)>>8),
-  			int((socket_addr.sin_addr.s_addr&0xFF0000)>>16),
-  			int((socket_addr.sin_addr.s_addr&0xFF000000)>>24));
-
-	}
-	else {
-		last_client->next = malloc(sizeof(client_t));
-		last_client = last_client->next;
-		last_client->client_id = nclients;
-		last_client->client_desc = client_desc;
-		fprintf(last_client->client_ip,
-			"%d.%d.%d.%d\0",
-			int(socket_addr.sin_addr.s_addr&0xFF),
-			int((socket_addr.sin_addr.s_addr&0xFF00)>>8),
-  			int((socket_addr.sin_addr.s_addr&0xFF0000)>>16),
-  			int((socket_addr.sin_addr.s_addr&0xFF000000)>>24)
-		       );
-	}
-	nclients++;
-	return 0;
+	client_t client = (client_l) arg
+	pthread_exit(NULL);
 }
 
 char* get_ip(struct sockaddr_in socket_addr) {
