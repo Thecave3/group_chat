@@ -20,12 +20,8 @@ sem_t client_list_semaphore;
 char* get_ip(struct sockaddr_in socket_addr, char buffer);
 int recv_message(int socket_desc, char* buffer, int buffer_len);
 int send_message(int socket_desc, char* buffer, int buffer_len);
-
 void *init_client_routine(void* arg);
-
-void goodbye (void) {
-	fprintf(stderr, "goodbye\n");
-}
+void goodbye (void);
 
 int main(int argc, char const *argv[]) {
 	int									server_desc , client_desc, client_addr_len, ret;
@@ -35,6 +31,7 @@ int main(int argc, char const *argv[]) {
 
 	nclients = 0;
 	client_list = malloc(sizeof(client_t));
+	client_list->next = NULL;
 	client_addr_len = sizeof(client_addr);
 
 	// Controllo sui valori in input
@@ -51,7 +48,7 @@ int main(int argc, char const *argv[]) {
 	if (sem_init(&client_list_semaphore, 0, 1)) {
 		if (DEBUG) {
 			fprintf(stderr, "client_list_semaphore: error in sem_init;\n");
-			fprintf(stderr, "\tmain\n", );
+			fprintf(stderr, "\tmain\n");
 		}
 		exit(EXIT_FAILURE);
 	}
@@ -83,6 +80,7 @@ int main(int argc, char const *argv[]) {
 		client_l thread_arg = malloc(sizeof(client_t));
 		thread_arg->client_id = nclients;
 		thread_arg->client_desc = client_desc;
+		thread_arg->next = NULL;
 		sprintf(thread_arg->client_ip,
 			"%d.%d.%d.%d\0",
 			(int)(client_addr.sin_addr.s_addr&0xFF),
@@ -92,20 +90,19 @@ int main(int argc, char const *argv[]) {
 		pthread_t* init_client_thread = malloc(sizeof(pthread_t));
 		ret = pthread_create(init_client_thread, NULL, init_client_routine,(void*) thread_arg);
 		if (ret != 0) {
-			fprintf(stderr, "ptrhead_create: %s\n", msg, strerror(ret));
+			fprintf(stderr, "ptrhead_create: %s\n", strerror(ret));
 			fprintf(stderr, "\tmain\n");
 			exit(EXIT_FAILURE);
 		}
 		ret = pthread_detach(*init_client_thread);
 		if (ret != 0) {
-			fprintf(stderr, "ptrhead_detach: %s\n", msg, strerror(ret));
+			fprintf(stderr, "ptrhead_detach: %s\n", strerror(ret));
 			fprintf(stderr, "\tmain\n");
-			exit(EXIT_FAILURE);      
+			exit(EXIT_FAILURE);
 		}
 		memset(&client_addr, 0, sizeof(client_addr));
 		nclients++;
   }
-	ret = sem_destroy(&client_list_semaphore);
   exit(EXIT_SUCCESS);
 }
 
@@ -190,4 +187,14 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
     bytes_send += ret;
   }
   return bytes_send;
+}
+
+void goodbye (void) {
+	while (client_list != NULL) {
+		client_l aux = client_list;
+		client_list = client_list->next;
+		free(aux);
+	}
+	sem_destroy(&client_list_semaphore);
+	fprintf(stderr, "The server say goodbye!\n");
 }
