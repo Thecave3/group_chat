@@ -27,6 +27,7 @@ int main(int argc, char const *argv[]) {
 	struct sockaddr_in	server_addr , client_addr;
 
 	atexit(goodbye);
+  signal(SIGINT, exit);
 
 	nclients = 0;
 	client_list = malloc(sizeof(client_t));
@@ -39,7 +40,7 @@ int main(int argc, char const *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	ret = atoi(argv[1]);
-	if(ret > 1024 && ret < 65535) {
+	if(ret < 1024 && ret > 65535) {
 		fprintf(stderr, "Incorrect port value\n");
 		exit(EXIT_FAILURE);
 	}
@@ -70,6 +71,7 @@ int main(int argc, char const *argv[]) {
 
 	// Ciclo sentinella
 	while(1) {
+		fprintf(stderr, "Server started!\n");
 		client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
     if (client_desc < 0) {
 			perror("Unable to connect to client");
@@ -150,9 +152,38 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
   return bytes_send;
 }
 
+int send_list(int socket_desc) {
+	client_l aux = client_list;
+	char buffer[84*nclients];
+	while (aux != NULL) {
+		strcpy(buffer, aux->client_name);
+		strcat(buffer, "\n");
+		strcat(buffer, aux->client_ip);
+		strcat(buffer, "\n\r");
+		aux = aux->next;
+	}
+	if (send_message(socket_desc, buffer, sizeof(buffer))){
+		if (DEBUG)
+			fprintf(stderr, "\tsend_list\n");
+		return 0;
+	}
+	return 1
+}
+
 void *init_client_routine(void *arg) {
 	int ret;
 	client_l client = (client_l) arg;
+	if (send_message(client->client_desc, WELCOME_MSG, sizeof(WELCOME_MSG))){
+		if (DEBUG)
+			fprintf(stderr, "\tinit_client_routine\n");
+		exit(EXIT_FAILURE);
+	}
+	if (recv_message(client->client_desc, client->client_name, sizeof(client->client_name))) {
+		if (DEBUG)
+			fprintf(stderr, "\tinit_client_routine\n");
+		exit(EXIT_FAILURE);
+	}
+	// Aggiungo il client alla scl del client attivi
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) {
 			perror("client_list_semaphore: error in wait");
@@ -168,22 +199,20 @@ void *init_client_routine(void *arg) {
 		last_client->next = client;
 		last_client = last_client->next;
 	}
-	if(sem_post(&client_list_semaphore)) {
+	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) {
 			perror("client_list_semaphore: error in post");
 			fprintf(stderr, "\tinit_client_routine\n");
 		}
 		exit(EXIT_FAILURE);
 	}
-	if(send_message(client->client_desc, WELCOME_MSG, sizeof(WELCOME_MSG))){
-		if (DEBUG)
-			fprintf(stderr, "\tinit_client_routine\n");
-		exit(EXIT_FAILURE);
-	}
-	if(recv_message(client->client_desc, client->client_name, sizeof(client->client_name))) {
-		if (DEBUG)
-			fprintf(stderr, "\tinit_client_routine\n");
-		exit(EXIT_FAILURE);
+	char buffer[128];
+	while(1) {
+		ret = recv_message(client->client_desc, buffer, sizeof(buffer)) {
+		if (ret == 0) {
+			fprintf(stderr, "Connection closed by %s:%s\n", client->client_name, client->client_ip);
+			break;
+		}
 	}
 	pthread_exit(NULL);
 }
@@ -195,5 +224,5 @@ void goodbye (void) {
 		free(aux);
 	}
 	sem_destroy(&client_list_semaphore);
-	fprintf(stderr, "The server say goodbye!\n");
+	fprintf(stderr, "\nThe server say goodbye!\n");
 }
