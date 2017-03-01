@@ -16,6 +16,8 @@
 #include <netinet/in.h>
 
 
+
+#define BUF_LEN 1024
 #define ERR_MSG_LENGTH 1024
 #define SERVER_ADDRESS "127.0.0.1"
 #define SERVER_PORT 3000
