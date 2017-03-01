@@ -13,45 +13,24 @@ int main(int argc, char const *argv[]) {
 
 	atexit(goodbye);
   signal(SIGINT, exit);
+	server_init(&server_desc, &server_addr);
 
-	nclients = 0;
-	client_addr_len = sizeof(client_addr);
-
-	if (sem_init(&client_list_semaphore, 0, 1)) {
-		if (DEBUG) {
-			fprintf(stderr, "client_list_semaphore: error in sem_init;\n");
-			fprintf(stderr, "\tmain\n");
-		}
-		exit(EXIT_FAILURE);
-	}
-
-	// Inizializzazione porta socket
-	server_desc = socket(AF_INET , SOCK_STREAM , 0);
-	if (server_desc == -1) {
-		fprintf(stderr, "Could not create socket");
-		exit(EXIT_FAILURE);
-	}
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(SERVER_PORT);
-	if(bind(server_desc,(struct sockaddr *)&server_addr , sizeof(server_addr)) < 0)
-	{
-		perror("Bind failed");
-		exit(EXIT_FAILURE);
-	}
-	listen(server_desc , MAX_CONN_QUEUE);
 	fprintf(stderr, "Server started!\n");
+
 	// Ciclo sentinella
+	client_addr_len = sizeof(client_addr);
 	while(1) {
 		client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
     if (client_desc < 0) {
-			perror("Unable to connect to client");
-			return 1;
+			if (DEBUG) perror("client_desc: error in accept");
+			fprintf(stderr, "Impossibile connettersi al client");
+			continue;
     }
-		fprintf(stderr, "Incoming connection by ");
+		fprintf(stderr, "Incoming connection ");
 		client_l thread_arg = malloc(sizeof(client_t));
 		thread_arg->client_desc = client_desc;
 		thread_arg->next = NULL;
+		thread_arg->prev = NULL;
 		sprintf(thread_arg->client_ip,
 			"%d.%d.%d.%d",
 			(int)(client_addr.sin_addr.s_addr&0xFF),
@@ -62,15 +41,15 @@ int main(int argc, char const *argv[]) {
 		pthread_t* init_client_thread = malloc(sizeof(pthread_t));
 		ret = pthread_create(init_client_thread, NULL, init_client_routine,(void*) thread_arg);
 		if (ret != 0) {
-			fprintf(stderr, "ptrhead_create: %s\n", strerror(ret));
-			fprintf(stderr, "\tmain\n");
-			exit(EXIT_FAILURE);
+			if (DEBUG) fprintf(stderr, "init_client_thread: error in ptrhead_create: %s\n", strerror(ret));
+			fprintf(stderr, "Impossibile connettersi al client");
+			continue;
 		}
 		ret = pthread_detach(*init_client_thread);
 		if (ret != 0) {
-			fprintf(stderr, "ptrhead_detach: %s\n", strerror(ret));
-			fprintf(stderr, "\tmain\n");
-			exit(EXIT_FAILURE);
+			if (DEBUG) fprintf(stderr, "init_client_thread: error in ptrhead_detach: %s\n", strerror(ret));
+			fprintf(stderr, "Impossibile connettersi al client");
+			continue;
 		}
 		memset(&client_addr, 0, sizeof(client_addr));
   }
@@ -78,42 +57,11 @@ int main(int argc, char const *argv[]) {
 }
 
 void *init_client_routine(void *arg) {
-	int ret;
 	client_l client = (client_l) arg;
 	send_message(client->client_desc, WELCOME_MSG, sizeof(WELCOME_MSG));
 	recv_message(client->client_desc, client->client_name, sizeof(client->client_name));
 	// Aggiungo il client alla scl del client attivi
-	if (sem_wait(&client_list_semaphore)) {
-		if (DEBUG) {
-			perror("client_list_semaphore: error in wait");
-			fprintf(stderr, "\tinit_client_routine\n");
-		}
-		exit(EXIT_FAILURE);
-	}
-	client->client_id = nclients;
-	if (nclients == 0) {
-		client_list = client;
-		last_client = client;
-	}
-	else {
-		last_client->next = client;
-		last_client = client;
-	}
-	nclients++;
-	if (sem_post(&client_list_semaphore)) {
-		if (DEBUG) {
-			perror("client_list_semaphore: error in post");
-			fprintf(stderr, "\tinit_client_routine\n");
-		}
-		exit(EXIT_FAILURE);
-	}
-	char buffer[128];
-	while(1) {
-		ret = recv_message(client->client_desc, buffer, sizeof(buffer));
-		if (ret == 0) {
-			fprintf(stderr, "Connection closed by %s:%s\n", client->client_name, client->client_ip);
-			break;
-		}
-	}
+	add_to_cl(client);
+	send_list(client->client_desc);
 	pthread_exit(NULL);
 }

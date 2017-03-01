@@ -5,18 +5,18 @@ int recv_message(int socket_desc, char* buffer,  int buffer_len) {
   int   ret;
   int   bytes_read = 0;
 
+  signal(SIGINT, exit);
+
   while(1) {
     ret = recv(socket_desc, buffer + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR)
 			continue;
     if (ret == -1) {
-			if (DEBUG)
-      	perror("recv_message: error in recv");
+			if (DEBUG) perror("recv_message: error in recv");
       return -1;
     }
     if (ret == 0) {
-			if (DEBUG)
-				perror("recv_message: connection closed by client");
+			if (DEBUG) perror("recv_message: connection closed by client");
       return 0;
     }
     bytes_read++;
@@ -37,8 +37,7 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
     ret = send(socket_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
-			if (DEBUG)
-      	perror("send_message: error in send");
+			if (DEBUG) perror("send_message: error in send");
       return -1;
     }
     bytes_send += ret;
@@ -51,14 +50,14 @@ int send_list(int socket_desc) {
 	char buffer[84*nclients];
 	while (aux != NULL) {
 		strcpy(buffer, aux->client_name);
-		strcat(buffer, "\n");
+		strcat(buffer, "\\n");
 		strcat(buffer, aux->client_ip);
-		strcat(buffer, "\n\r");
+		strcat(buffer, "\\n\\r");
 		aux = aux->next;
+    if (DEBUG) printf("%s\n", buffer);
 	}
 	if (send_message(socket_desc, buffer, sizeof(buffer))){
-		if (DEBUG)
-			fprintf(stderr, "\tsend_list\n");
+		if (DEBUG) fprintf(stderr, "\tsend_list\n");
 		return 0;
 	}
 	return 1;
