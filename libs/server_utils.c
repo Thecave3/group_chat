@@ -58,7 +58,6 @@ void remove_to_cl(int id) {
 		}
 		aux = aux->next;
 	}
-
 	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in post");
 		fprintf(stderr, "Impossibile registrare il client");

@@ -63,6 +63,5 @@ void *init_client_routine(void *arg) {
 	// Aggiungo il client alla scl del client attivi
 	add_to_cl(client);
 	send_list(client->client_desc);
-	remove_to_cl(client->client_id);
 	pthread_exit(NULL);
 }
