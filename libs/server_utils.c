@@ -45,8 +45,18 @@ void remove_to_cl(int id) {
 		free(aux);
 		return;
 	}
+	aux = client_list;
 	while (aux != NULL) {
-
+		if (aux->client_id == id) {
+				client_l bux = aux;
+			  aux = bux->prev;
+				aux->next = bux->next;
+				aux = bux->next;
+				aux->prev = bux->prev;
+				free(bux);
+				break;
+		}
+		aux = aux->next;
 	}
 
 	if (sem_post(&client_list_semaphore)) {
