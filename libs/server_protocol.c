@@ -1,11 +1,11 @@
 #include "server_protocol.h"
-#include "server_utils.h"
+
+#define QUERY_LEN 5
 
 int server_status (int sock_desc, int status) {
   int         ret;
   int         query_send = 0;
   char        query[5];
-  const int   query_len = 5;
 
   if (status == ONLINE) {
       query[0] = 'S';
@@ -22,8 +22,8 @@ int server_status (int sock_desc, int status) {
     query[4] = '\0';
   }
 
-  while (query_send < query_len) {
-    ret = send(sock_desc, query + query_send, query_len - query_send, 0);
+  while (query_send < QUERY_LEN) {
+    ret = send(sock_desc, query + query_send, QUERY_LEN - query_send, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
       if (DEBUG) perror("server_status: error in send");
@@ -38,6 +38,7 @@ int server_connect(struct sockaddr_in* sock_addr, char* name, size_t name_len) {
   int   ret;
   int   bytes_send = 0;
   int   sock_desc = socket(AF_INET,SOCK_STREAM,0);
+
   if (sock_desc <= 0) {
     return -1;
   }
@@ -45,6 +46,7 @@ int server_connect(struct sockaddr_in* sock_addr, char* name, size_t name_len) {
   sock_addr->sin_family = AF_INET;
   sock_addr->sin_port = htons(SERVER_PORT);
   if (connect(sock_desc,(struct sockaddr*) sock_addr,sizeof(struct sockaddr_in))) {
+    if (DEBUG) perror("server_connect: error in connect");
     return -1;
   }
 
@@ -65,16 +67,15 @@ int download_list(int sock_desc, char* buffer, size_t buff_len) {
   int         query_send = 0;
   int         bytes_read = 0;
   char        query[5] = {'L','I','S','T','\0'};
-  const int   query_len = 5;
 
-  while (query_send < query_len) {
-    ret = send(sock_desc, query + query_send, query_len - query_send, 0);
+  while (query_send < QUERY_LEN) {
+    ret = send(sock_desc, query + query_send, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
       if (DEBUG) perror("download_list: error in (query) send");
       return -1;
     }
-    query_send += ret;
+    query_send ++;
   }
 
   while(1) {
@@ -98,10 +99,9 @@ int server_disconnect(int sock_desc) {
   int         ret;
   int         query_send = 0;
   char        query[5] = {'Q','U','I','T','\0'};
-  const int   query_len = 5;
 
-  while (query_send < query_len) {
-    ret = send(sock_desc, query + query_send, query_len - query_send, 0);
+  while (query_send < QUERY_LEN) {
+    ret = send(sock_desc, query + query_send, QUERY_LEN - query_send, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
       if (DEBUG) perror("server_disconnect: error in send");

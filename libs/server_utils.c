@@ -1,6 +1,6 @@
 #include "server_utils.h"
 
-void add_cl(client_l client) {
+void 	add_cl(client_l client) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
@@ -24,7 +24,7 @@ void add_cl(client_l client) {
 	}
 }
 
-void remove_cl(int id) {
+void 	remove_cl(int id) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
@@ -42,6 +42,12 @@ void remove_cl(int id) {
 			last_client = NULL;
 		}
 		free(aux);
+		if (sem_post(&client_list_semaphore)) {
+			if (DEBUG) perror("client_list_semaphore: error in post");
+			fprintf(stderr, "Impossibile registrare il client");
+			pthread_exit(NULL);
+		}
+		nclients--;
 		return;
 	}
 	aux = client_list;
@@ -57,6 +63,7 @@ void remove_cl(int id) {
 		}
 		aux = aux->next;
 	}
+	nclients--;
 	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in post");
 		fprintf(stderr, "Impossibile registrare il client");
@@ -64,7 +71,7 @@ void remove_cl(int id) {
 	}
 }
 
-void server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
+void 	server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 	nclients = 0;
 	client_list = NULL;
 	last_client = NULL;
@@ -100,7 +107,7 @@ void server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 	}
 }
 
-int send_cl(int sock_desc) {
+int 	send_cl(int sock_desc) {
 	int   		ret;
 	int				list_len = 0;
 	int   		bytes_send = 0;
@@ -115,7 +122,6 @@ int send_cl(int sock_desc) {
 			strcat(buffer,"\n");
 			strcat(buffer, aux->client_name);
 			strcat(buffer,"\n\r");
-			fprintf(stderr, "%s\n", buffer);
 			buffer_len = strlen(buffer);
 			while (bytes_send < buffer_len) {
 				ret = send(sock_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
@@ -143,7 +149,7 @@ int send_cl(int sock_desc) {
 	return list_len + 1;
 }
 
-void goodbye (void) {
+void 	goodbye (void) {
 	fprintf(stderr, "\n");
 	if (DEBUG) fprintf(stderr, "Svuoto la lista dei client\n");
 	while (client_list != NULL) {

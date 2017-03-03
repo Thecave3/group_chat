@@ -1,7 +1,16 @@
-#include "common.h"
+#include <stdio.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
-#define OFFLINE 0
-#define ONLINE  1
+#define DEBUG           1
+#define QUERY_LEN       5
+#define SERVER_ADDRESS "127.0.0.1"
+#define SERVER_PORT     8583
+
+#define OFFLINE   0
+#define ONLINE    1
 
 int server_status(int sock_desc, int status);
 int server_connect(struct sockaddr_in* sock_addr, char* name, size_t name_len);

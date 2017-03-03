@@ -2,9 +2,6 @@
 #include "../libs/server_protocol.h"
 #include "../libs/server_utils.h"
 
-#define WELCOME_MSG 	"THIS IS THE WELCOME MESSAGE OF SERVER\0"
-
-int send_list(int socket_desc);
 void *init_client_routine(void* arg);
 
 int main(int argc, char const *argv[]) {
@@ -26,7 +23,6 @@ int main(int argc, char const *argv[]) {
 			fprintf(stderr, "Impossibile connettersi al client");
 			continue;
     }
-		fprintf(stderr, "Incoming connection ");
 		client_l thread_arg = malloc(sizeof(client_t));
 		thread_arg->client_desc = client_desc;
 		thread_arg->next = NULL;
@@ -37,7 +33,6 @@ int main(int argc, char const *argv[]) {
 			(int)((client_addr.sin_addr.s_addr&0xFF00)>>8),
 			(int)((client_addr.sin_addr.s_addr&0xFF0000)>>16),
 			(int)((client_addr.sin_addr.s_addr&0xFF000000)>>24));
-		fprintf(stderr, "%s\n", thread_arg->client_ip);
 		pthread_t* init_client_thread = malloc(sizeof(pthread_t));
 		ret = pthread_create(init_client_thread, NULL, init_client_routine,(void*) thread_arg);
 		if (ret != 0) {
@@ -58,24 +53,78 @@ int main(int argc, char const *argv[]) {
 
 void *init_client_routine(void *arg) {
 	int 			ret;
+	int   		bytes_read = 0;
+	int   		query_ret;
+	int  		 	query_recv;
 	char			query[5];
+
 	client_l 	client = (client_l) arg;
-	ret = recv_message(client->client_desc, client->client_name, sizeof(client->client_name));
+
+  while(1) {
+    ret = recv(client->client_desc, client->client_name + bytes_read, 1, 0);
+    if (ret == -1 && errno == EINTR)
+			continue;
+    if (ret == -1) {
+			if (DEBUG) perror("recv_message: error in recv");
+      pthread_exit(NULL);
+    }
+    if (ret == 0) {
+			if (DEBUG) perror("recv_message: connection closed by client");
+      pthread_exit(NULL);
+    }
+    bytes_read++;
+    if (client->client_name[bytes_read-1] == '\n' ||
+				client->client_name[bytes_read-1] ==  '\0' ||
+				bytes_read == 63)
+			break;
+  }
+  client->client_name[bytes_read-1] = '\0';
 	client->client_status = ONLINE;
+	if (DEBUG) fprintf(stderr, "%s [%s] "KYEL"NEW_CONNECTION"KNRM" => "KGRN"ONLINE"KNRM"\n", client->client_name, client->client_ip);
 	add_cl(client);
 	while (1) {
-		ret = recv_message(client->client_desc, query, 5);
-		if (ret <= 0) pthread_exit (NULL);
+		query_recv = 0;
+		memset(query, 0, QUERY_LEN);
+	  while(1) {
+	    query_ret = recv(client->client_desc, query + query_recv, 1, 0);
+	    if (query_ret == -1 && errno == EINTR)
+				continue;
+	    if (query_ret == -1) {
+				if (DEBUG) perror("recv_message: error in recv");
+				pthread_exit(NULL);
+	    }
+	    if (query_ret == 0) {
+				if (DEBUG) perror("recv_message: connection closed by client");
+	      pthread_exit(NULL);
+	    }
+	    query_recv++;
+	    if (query[query_recv-1] == '\n' ||
+					query[query_recv-1] ==  '\0' ||
+					query_recv == QUERY_LEN)
+				break;
+	  }
+	  query[query_recv-1] = '\0';
 		if (strcmp(query, "QUIT\0") == 0) {
 			remove_cl(client->client_id);
+			if (DEBUG) fprintf(stderr, "%s [%s] "KGRN"ONLINE"KNRM" => "KCYN"CLOSE_CONNECTION"KNRM"\n", client->client_name, client->client_ip);
 			break;
 		}
-		if (strcmp(query, "STOF\0") == 0)
-			client->client_status = OFFLINE;
-		if (strcmp(query, "STON\0") == 0)
-			client->client_status = ONLINE;
-		if (strcmp(query, "LIST\0") == 0)
+		if (strcmp(query, "STOF\0") == 0) {
+			if (client->client_status != OFFLINE) {
+				client->client_status = OFFLINE;
+				if (DEBUG) fprintf(stderr,"%s [%s] "KGRN"ONLINE"KNRM" => "KRED"OFFLINE"KNRM"\n", client->client_name, client->client_ip);
+			}
+		}
+		if (strcmp(query, "STON\0") == 0){
+			if (client->client_status != ONLINE) {
+				client->client_status = ONLINE;
+				if (DEBUG) fprintf(stderr, "%s [%s] "KRED"OFFLINE"KNRM" => "KGRN"ONLINE"KNRM"\n", client->client_name, client->client_ip);
+			}
+		}
+		if (strcmp(query, "LIST\0") == 0) {
 			send_cl(client->client_desc);
+			if (DEBUG) fprintf(stderr, "%s [%s] >> "KWHT"LIST"KNRM"\n", client->client_name, client->client_ip);
+		}
 	}
 	pthread_exit(NULL);
 }
