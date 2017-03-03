@@ -29,3 +29,17 @@ l'applicazione client che per l'applicazione server.
 
 Per progetti misti Unix/Windows e' a scelta quale delle due applicazioni
 sviluppare per uno dei due sistemi.
+
+# server_linux
+
+Funziona
+* Registra ogni nuovo client che si connette al server
+* Client a due stati {ONLINE, OFFLINE}
+* Fornisce una lista dei client connessi
+* Su richiesta del client lo rimuove dalla lista
+
+In Lavorazione
+* Logger delle operazioni sul server
+
+Non ancora cominciato
+* Semplificazione controllo del server
