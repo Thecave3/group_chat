@@ -58,16 +58,22 @@ int main(int argc, char const *argv[]) {
 }
 
 void *init_client_routine(void *arg) {
+	client_l 	client = (client_l) arg;
+
+	int*			status = &client->client_status;
 	int 			ret;
+	int 			client_desc = client->client_desc;
 	int   		bytes_read = 0;
 	int   		query_ret;
 	int  		 	query_recv;
+	int				client_id = client->client_id;
+	char*			name = client->client_name;
+	char*			client_ip = client->client_ip;
 	char			query[5];
 
-	client_l 	client = (client_l) arg;
 
   while(1) {
-    ret = recv(client->client_desc, client->client_name + bytes_read, 1, 0);
+    ret = recv(client_desc, name + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR)
 			continue;
     if (ret == -1) {
@@ -79,20 +85,20 @@ void *init_client_routine(void *arg) {
       pthread_exit(NULL);
     }
     bytes_read++;
-    if (client->client_name[bytes_read-1] == '\n' ||
-				client->client_name[bytes_read-1] ==  '\0' ||
+    if (name[bytes_read-1] == '\n' ||
+				name[bytes_read-1] ==  '\0' ||
 				bytes_read == 63)
 			break;
   }
-  client->client_name[bytes_read-1] = '\0';
-	client->client_status = ONLINE;
-	if (DEBUG) fprintf(stderr, "%s [%s] "KYEL"NEW_CONNECTION"KNRM" => "KGRN"ONLINE"KNRM"\n", client->client_name, client->client_ip);
+  name[bytes_read-1] = '\0';
+	*status = ONLINE;
+	if (DEBUG) fprintf(stderr, "%s: %s [%s] "KYEL"NEW_CONNECTION"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), name, client_ip);
 	add_cl(client);
 	while (1) {
 		query_recv = 0;
 		memset(query, 0, QUERY_LEN);
 	  while(1) {
-	    query_ret = recv(client->client_desc, query + query_recv, 1, 0);
+	    query_ret = recv(client_desc, query + query_recv, 1, 0);
 	    if (query_ret == -1 && errno == EINTR)
 				continue;
 	    if (query_ret == -1) {
@@ -111,25 +117,25 @@ void *init_client_routine(void *arg) {
 	  }
 	  query[query_recv-1] = '\0';
 		if (strcmp(query, "QUIT\0") == 0) {
-			remove_cl(client->client_id);
-			if (DEBUG) fprintf(stderr, "%s [%s] "KGRN"ONLINE"KNRM" => "KCYN"CLOSE_CONNECTION"KNRM"\n", client->client_name, client->client_ip);
+			remove_cl(client_id);
+			if (DEBUG) fprintf(stderr, "%s: %s [%s] "KGRN"ONLINE"KNRM" => "KCYN"CLOSE_CONNECTION"KNRM"\n", get_time(), name, client_ip);
 			break;
 		}
 		if (strcmp(query, "STOF\0") == 0) {
-			if (client->client_status != OFFLINE) {
-				client->client_status = OFFLINE;
-				if (DEBUG) fprintf(stderr,"%s [%s] "KGRN"ONLINE"KNRM" => "KRED"OFFLINE"KNRM"\n", client->client_name, client->client_ip);
+			if (*status != OFFLINE) {
+				*status = OFFLINE;
+				if (DEBUG) fprintf(stderr,"%s: %s [%s] "KGRN"ONLINE"KNRM" => "KRED"OFFLINE"KNRM"\n", get_time(), name, client_ip);
 			}
 		}
 		if (strcmp(query, "STON\0") == 0){
-			if (client->client_status != ONLINE) {
-				client->client_status = ONLINE;
-				if (DEBUG) fprintf(stderr, "%s [%s] "KRED"OFFLINE"KNRM" => "KGRN"ONLINE"KNRM"\n", client->client_name, client->client_ip);
+			if (*status != ONLINE) {
+				*status = ONLINE;
+				if (DEBUG) fprintf(stderr, "%s: %s [%s] "KRED"OFFLINE"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), name, client_ip);
 			}
 		}
 		if (strcmp(query, "LIST\0") == 0) {
-			send_cl(client->client_desc);
-			if (DEBUG) fprintf(stderr, "%s [%s] >> "KWHT"LIST"KNRM"\n", client->client_name, client->client_ip);
+			send_cl(client_desc);
+			if (DEBUG) fprintf(stderr, "%s: %s [%s] >> "KWHT"LIST"KNRM"\n", get_time(), name, client_ip);
 		}
 	}
 	pthread_exit(NULL);
