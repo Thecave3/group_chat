@@ -1,10 +1,10 @@
 #include "server_utils.h"
 
-void 	add_cl(client_l client) {
+int		add_cl(client_l client) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
-		pthread_exit(NULL);
+		return 0;
 	}
 	client->client_id = nclients;
 	if (nclients == 0) {
@@ -20,19 +20,20 @@ void 	add_cl(client_l client) {
 	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in post");
 		fprintf(stderr, "Impossibile registrare il client");
-		pthread_exit(NULL);
+		return 0;
 	}
+	return 1;
 }
 
-void 	remove_cl(int id) {
+int 	remove_cl(int id) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
-		pthread_exit(NULL);
+		return 0;
 	}
 	client_l aux;
 
-	if (client_list == NULL && last_client == NULL) return;
+	if (client_list == NULL && last_client == NULL) return -1;
 	aux = last_client;
 	if (aux->client_id == id) {
 		if (aux->prev != NULL)
@@ -45,10 +46,10 @@ void 	remove_cl(int id) {
 		if (sem_post(&client_list_semaphore)) {
 			if (DEBUG) perror("client_list_semaphore: error in post");
 			fprintf(stderr, "Impossibile registrare il client");
-			pthread_exit(NULL);
+			return 0;
 		}
 		nclients--;
-		return;
+		return 0;
 	}
 	aux = client_list;
 	while (aux != NULL) {
@@ -67,11 +68,12 @@ void 	remove_cl(int id) {
 	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in post");
 		fprintf(stderr, "Impossibile registrare il client");
-		pthread_exit(NULL);
+		return 0;
 	}
+	return 1;
 }
 
-void 	server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
+int		server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 	nclients = 0;
 	client_list = NULL;
 	last_client = NULL;
@@ -81,7 +83,7 @@ void 	server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 			fprintf(stderr, "client_list_semaphore: error in sem_init;\n");
 			fprintf(stderr, "\tmain\n");
 		}
-		exit(EXIT_FAILURE);
+		return 0;
 	}
 
 	// Inizializzazione porta socket
@@ -98,13 +100,14 @@ void 	server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 	{
 		if (DEBUG) perror("sock_desc: error in bind");
 		fprintf(stderr, "Impossibile avviare la connessione\n");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 	if(listen(*sock_desc , MAX_CONN_QUEUE)) {
 		if (DEBUG) perror("sock_desc: error in listen");
 		fprintf(stderr, "Impossibile avviare la connessione\n");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
+	return 1;
 }
 
 int 	send_cl(int sock_desc) {

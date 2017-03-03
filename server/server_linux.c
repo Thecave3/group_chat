@@ -1,6 +1,12 @@
-#include "../libs/common.h"
-#include "../libs/server_protocol.h"
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <pthread.h>
+#include "../libs/colors.h"
 #include "../libs/server_utils.h"
+#include "../libs/server_protocol.h"
 
 void *init_client_routine(void* arg);
 

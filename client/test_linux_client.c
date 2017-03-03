@@ -1,5 +1,9 @@
-#include "../libs/common.h"
+/* Client esempio di comunicazione con il server */
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
 #include "../libs/server_protocol.h"
+
 
 int main(int argc, char* argv[]) {
   int                 ret;
