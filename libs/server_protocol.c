@@ -1,11 +1,120 @@
 #include "server_protocol.h"
 #include "server_utils.h"
 
+int server_status (int sock_desc, int status) {
+  int         ret;
+  int         query_send = 0;
+  char        query[5];
+  const int   query_len = 5;
+
+  if (status == ONLINE) {
+      query[0] = 'S';
+      query[1] = 'T';
+      query[2] = 'O';
+      query[3] = 'N';
+      query[4] = '\0';
+  }
+  if (status == OFFLINE) {
+    query[0] = 'S';
+    query[1] = 'T';
+    query[2] = 'O';
+    query[3] = 'F';
+    query[4] = '\0';
+  }
+
+  while (query_send < query_len) {
+    ret = send(sock_desc, query + query_send, query_len - query_send, 0);
+    if (ret == -1 && errno == EINTR) continue;
+    if (ret == -1) {
+      if (DEBUG) perror("server_status: error in send");
+      return -1;
+    }
+    query_send += ret;
+  }
+  return 1;
+}
+
+int server_connect(struct sockaddr_in* sock_addr, char* name, size_t name_len) {
+  int   ret;
+  int   bytes_send = 0;
+  int   sock_desc = socket(AF_INET,SOCK_STREAM,0);
+  if (sock_desc <= 0) {
+    return -1;
+  }
+  sock_addr->sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
+  sock_addr->sin_family = AF_INET;
+  sock_addr->sin_port = htons(SERVER_PORT);
+  if (connect(sock_desc,(struct sockaddr*) sock_addr,sizeof(struct sockaddr_in))) {
+    return -1;
+  }
+
+  while (bytes_send < name_len) {
+    ret = send(sock_desc, name + bytes_send, name_len - bytes_send, 0);
+    if (ret == -1 && errno == EINTR) continue;
+    if (ret == -1) {
+			if (DEBUG) perror("server_connect: error in send");
+      return -1;
+    }
+    bytes_send += ret;
+  }
+  return sock_desc;
+}
+
+int download_list(int sock_desc, char* buffer, size_t buff_len) {
+  int         ret;
+  int         query_send = 0;
+  int         bytes_read = 0;
+  char        query[5] = {'L','I','S','T','\0'};
+  const int   query_len = 5;
+
+  while (query_send < query_len) {
+    ret = send(sock_desc, query + query_send, query_len - query_send, 0);
+    if (ret == -1 && errno == EINTR) continue;
+    if (ret == -1) {
+      if (DEBUG) perror("download_list: error in (query) send");
+      return -1;
+    }
+    query_send += ret;
+  }
+
+  while(1) {
+    ret = recv(sock_desc, buffer + bytes_read, 1, 0);
+    if (ret == -1 && errno == EINTR) continue;
+    if (ret == -1) {
+      if (DEBUG) perror("download_list: error in recv");
+      return -1;
+    }
+    if (ret == 0) {
+      if (DEBUG) perror("download_list: connection closed by client");
+      return 0;
+    }
+    bytes_read++;
+    if (buffer[bytes_read-1] ==  '\0') break;
+  }
+  return bytes_read;
+}
+
+int server_disconnect(int sock_desc) {
+  int         ret;
+  int         query_send = 0;
+  char        query[5] = {'Q','U','I','T','\0'};
+  const int   query_len = 5;
+
+  while (query_send < query_len) {
+    ret = send(sock_desc, query + query_send, query_len - query_send, 0);
+    if (ret == -1 && errno == EINTR) continue;
+    if (ret == -1) {
+      if (DEBUG) perror("server_disconnect: error in send");
+      return -1;
+    }
+    query_send += ret;
+  }
+  return query_send;
+}
+
 int recv_message(int socket_desc, char* buffer,  int buffer_len) {
   int   ret;
   int   bytes_read = 0;
-
-  signal(SIGINT, exit);
 
   while(1) {
     ret = recv(socket_desc, buffer + bytes_read, 1, 0);
@@ -43,22 +152,4 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
     bytes_send += ret;
   }
   return bytes_send;
-}
-
-int send_list(int socket_desc) {
-	client_l aux = client_list;
-	char buffer[84*nclients];
-	while (aux != NULL) {
-		strcpy(buffer, aux->client_name);
-		strcat(buffer, "\\n");
-		strcat(buffer, aux->client_ip);
-		strcat(buffer, "\\n\\r");
-		aux = aux->next;
-    if (DEBUG) printf("%s\n", buffer);
-	}
-	if (send_message(socket_desc, buffer, sizeof(buffer))){
-		if (DEBUG) fprintf(stderr, "\tsend_list\n");
-		return 0;
-	}
-	return 1;
 }

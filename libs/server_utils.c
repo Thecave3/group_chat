@@ -1,6 +1,6 @@
 #include "server_utils.h"
 
-void add_to_cl(client_l client) {
+void add_cl(client_l client) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
@@ -24,8 +24,7 @@ void add_to_cl(client_l client) {
 	}
 }
 
-
-void remove_to_cl(int id) {
+void remove_cl(int id) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
@@ -99,6 +98,49 @@ void server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 		fprintf(stderr, "Impossibile avviare la connessione\n");
 		exit(EXIT_FAILURE);
 	}
+}
+
+int send_cl(int sock_desc) {
+	int   		ret;
+	int				list_len = 0;
+	int   		bytes_send = 0;
+	int				buffer_len = 0;
+	char 			buffer[84];
+	client_l	aux = client_list;
+
+	while (aux != NULL) {
+		if (aux->client_status == ONLINE) {
+			memset(buffer,0,84);
+			strcpy(buffer, aux->client_ip);
+			strcat(buffer,"\n");
+			strcat(buffer, aux->client_name);
+			strcat(buffer,"\n\r");
+			fprintf(stderr, "%s\n", buffer);
+			buffer_len = strlen(buffer);
+			while (bytes_send < buffer_len) {
+				ret = send(sock_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
+				if (ret == -1 && errno == EINTR) continue;
+				if (ret == -1) {
+					if (DEBUG) perror("send_cl: error in send");
+					return -1;
+				}
+				bytes_send += ret;
+			}
+			list_len += bytes_send;
+			bytes_send = 0;
+		}
+		aux = aux->next;
+	}
+	ret = 0;
+	while (ret <= 0) {
+		ret = send(sock_desc, "\0", 1, 0);
+		if (ret == -1 && errno == EINTR) continue;
+		if (ret == -1) {
+			if (DEBUG) perror("send_message: error in send");
+			return -1;
+		}
+	}
+	return list_len + 1;
 }
 
 void goodbye (void) {

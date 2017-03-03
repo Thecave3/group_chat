@@ -57,11 +57,25 @@ int main(int argc, char const *argv[]) {
 }
 
 void *init_client_routine(void *arg) {
-	client_l client = (client_l) arg;
-	send_message(client->client_desc, WELCOME_MSG, sizeof(WELCOME_MSG));
-	recv_message(client->client_desc, client->client_name, sizeof(client->client_name));
-	// Aggiungo il client alla scl del client attivi
-	add_to_cl(client);
-	send_list(client->client_desc);
+	int 			ret;
+	char			query[5];
+	client_l 	client = (client_l) arg;
+	ret = recv_message(client->client_desc, client->client_name, sizeof(client->client_name));
+	client->client_status = ONLINE;
+	add_cl(client);
+	while (1) {
+		ret = recv_message(client->client_desc, query, 5);
+		if (ret <= 0) pthread_exit (NULL);
+		if (strcmp(query, "QUIT\0") == 0) {
+			remove_cl(client->client_id);
+			break;
+		}
+		if (strcmp(query, "STOF\0") == 0)
+			client->client_status = OFFLINE;
+		if (strcmp(query, "STON\0") == 0)
+			client->client_status = ONLINE;
+		if (strcmp(query, "LIST\0") == 0)
+			send_cl(client->client_desc);
+	}
 	pthread_exit(NULL);
 }
