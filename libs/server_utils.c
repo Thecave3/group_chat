@@ -152,7 +152,14 @@ int 	send_cl(int sock_desc) {
 	return list_len + 1;
 }
 
-void 	goodbye (void) {
+char* get_time() {
+	time_t mytime = time(NULL);
+	char* buffer = ctime(&mytime);
+	buffer[strlen(buffer)-1] = '\0';
+	return buffer;
+}
+
+void 	goodbye () {
 	fprintf(stderr, "\n");
 	if (DEBUG) fprintf(stderr, "Svuoto la lista dei client\n");
 	while (client_list != NULL) {

@@ -1,3 +1,4 @@
+#include <time.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -34,4 +35,5 @@ int 	server_init(int* sock_desc, struct sockaddr_in* sock_addr);
 int 	add_cl(client_l client);
 int 	remove_cl(int id);
 int 	send_cl(int sock_desc);
-void 	goodbye (void);
+char* get_time();
+void 	goodbye ();
