@@ -11,7 +11,7 @@
 #include "../libs/server_protocol.h"
 
 logger_t* main_logger;
-#define LOG_PATH "logs"
+#define LOG_PATH ".logs"
 
 void *init_client_routine(void* arg);
 void 	goodbye ();
@@ -20,25 +20,29 @@ int main(int argc, char const *argv[]) {
 	int									server_desc , client_desc, client_addr_len, ret;
 	char 								buffer[128];
 	struct sockaddr_in	server_addr , client_addr;
+	struct stat st = {0};
 
 	atexit(goodbye);
   signal(SIGINT, exit);
 	server_init(&server_desc, &server_addr);
 
+	if (stat(LOG_PATH, &st) == -1) {
+		mkdir(LOG_PATH, 0700);
+	}
+
 	strcpy(buffer, LOG_PATH);
 	strcat(buffer, "/");
-	strcat(buffer, "server_log");
+	strcat(buffer, "Server_log");
 	strcat(buffer, " - ");
 	strcat(buffer, get_time());
 
-	mkdir(LOG_PATH, 0666);
 
-	// main_logger = new_log(buffer);
+	main_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
 
 	fprintf(stderr, "%s: Server started\n", get_time());
-	//write_log(main_logger, "%s: Server started\n", get_time());
+	write_log(main_logger, "%s: Server started\n", get_time());
 
-	// Ciclo sentinella
+ 	// Ciclo sentinella
 	client_addr_len = sizeof(client_addr);
 	while(1) {
 		client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
@@ -117,11 +121,11 @@ void *init_client_routine(void *arg) {
 	strcat (buffer, get_time());
 	strcat (buffer, ".txt");
 
-	// logger_t* client_logger = new_log(buffer);
+	logger_t* client_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
 	*status = ONLINE;
 
-	//write_log(client_logger, "%s\nLog of client %s : %s\n", get_time(), client_ip, client_name);
-	//write_log(main_logger, "%s: New client connected %s : %s\n", get_time(), client_ip, client_name);
+	write_log(client_logger, "%s\nLog of client %s : %s\n", get_time(), client_ip, client_name);
+	write_log(main_logger, "%s: New client connected %s : %s\n", get_time(), client_ip, client_name);
 	if (DEBUG) fprintf(stderr, "%s: %s [%s] "KYEL"NEW_CONNECTION"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), client_name, client_ip);
 	add_cl(client);
 	while (1) {
@@ -148,29 +152,29 @@ void *init_client_routine(void *arg) {
 	  query[query_recv-1] = '\0';
 		if (strcmp(query, "QUIT\0") == 0) {
 			remove_cl(client_id);
-			//write_log(client_logger, "%s: Client disconnected\n", get_time());
-			//destroy_log(client_logger);
-			//write_log(main_logger, "%s: Client disconnected %s : %s\n", get_time(), client_ip, client_name);
+			write_log(client_logger, "%s: Client disconnected\n", get_time());
+			destroy_log(client_logger);
+			write_log(main_logger, "%s: Client disconnected %s : %s\n", get_time(), client_ip, client_name);
 			if (DEBUG) fprintf(stderr, "%s: %s [%s] "KGRN"ONLINE"KNRM" => "KCYN"CLOSE_CONNECTION"KNRM"\n", get_time(), client_name, client_ip);
 			break;
 		}
 		if (strcmp(query, "STOF\0") == 0) {
 			if (*status != OFFLINE) {
 				*status = OFFLINE;
-				//write_log(client_logger, "%s: Change status Online => Offline\n", get_time());
+				write_log(client_logger, "%s: Change status Online => Offline\n", get_time());
 				if (DEBUG) fprintf(stderr,"%s: %s [%s] "KGRN"ONLINE"KNRM" => "KRED"OFFLINE"KNRM"\n", get_time(), client_name, client_ip);
 			}
 		}
 		if (strcmp(query, "STON\0") == 0){
 			if (*status != ONLINE) {
 				*status = ONLINE;
-				//write_log(client_logger, "%s: Change status Offline => Online\n", get_time());
+				write_log(client_logger, "%s: Change status Offline => Online\n", get_time());
 				if (DEBUG) fprintf(stderr, "%s: %s [%s] "KRED"OFFLINE"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), client_name, client_ip);
 			}
 		}
 		if (strcmp(query, "LIST\0") == 0) {
 			send_cl(client_desc);
-			//write_log(client_logger, "%s: Client asked the list\n", get_time());
+			write_log(client_logger, "%s: Client asked the list\n", get_time());
 			if (DEBUG) fprintf(stderr, "%s: %s [%s] >> "KWHT"LIST"KNRM"\n", get_time(), client_name, client_ip);
 		}
 	}
@@ -180,8 +184,8 @@ void *init_client_routine(void *arg) {
 
 void 	goodbye () {
 	fprintf(stderr, "\n");
-	//write_log(main_logger, "%s: Server halted\n", get_time());
-	//destroy_log(main_logger);
+	write_log(main_logger, "%s: Server halted\n", get_time());
+	destroy_log(main_logger);
 	if (DEBUG) fprintf(stderr, "Svuoto la lista dei client\n");
 	while (client_list != NULL) {
 		client_l aux = client_list;

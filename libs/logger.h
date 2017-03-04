@@ -10,11 +10,10 @@
 #define DEBUG 1
 
 typedef struct logger_s {
-  sem_t log_semaphore;
-  FILE* file_desc;
-  char  path[256];
+  int   fd;
+  sem_t ls;
 } logger_t;
 
-logger_t* new_log (const char* path);
-int       write_log (logger_t* logger,const char* str, ...);
+logger_t* new_log (const char* path, int flags, mode_t mode);
+int       write_log (logger_t* logger, const char* str, ...);
 int       destroy_log (logger_t* logger);
