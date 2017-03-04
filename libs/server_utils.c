@@ -158,16 +158,3 @@ char* get_time() {
 	buffer[strlen(buffer)-1] = '\0';
 	return buffer;
 }
-
-void 	goodbye () {
-	fprintf(stderr, "\n");
-	if (DEBUG) fprintf(stderr, "Svuoto la lista dei client\n");
-	while (client_list != NULL) {
-		client_l aux = client_list;
-		if(DEBUG) fprintf(stderr, "%d %s %s\n",aux->client_id, aux->client_ip, aux->client_name);
-		client_list = client_list->next;
-		free(aux);
-	}
-	sem_destroy(&client_list_semaphore);
-	fprintf(stderr, "The Server say goodbye!\n");
-}

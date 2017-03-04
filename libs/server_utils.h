@@ -36,4 +36,3 @@ int 	add_cl(client_l client);
 int 	remove_cl(int id);
 int 	send_cl(int sock_desc);
 char* get_time();
-void 	goodbye ();

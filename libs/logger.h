@@ -1,16 +1,20 @@
 #include <stdio.h>
-#include <fnctl.h>
+#include <fcntl.h>
 #include <error.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdarg.h>
+#include <string.h>
 #include <semaphore.h>
 
+#define DEBUG 1
+
 typedef struct logger_s {
-  int   file_desc;
-  sem_t semaphore;
-  char* file_name;
+  sem_t log_semaphore;
+  FILE* file_desc;
+  char  path[256];
 } logger_t;
 
-logget_t* new_logger (char* file_name);
-int       write_log (logger_t* logger,char* string, void parameters);
-int       destroy_log (logger_t logger);
+logger_t* new_log (const char* path);
+int       write_log (logger_t* logger,const char* str, ...);
+int       destroy_log (logger_t* logger);
