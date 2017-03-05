@@ -20,7 +20,7 @@ int   write_log(logger_t* logger, const char* str, ...) {
   if (sem_wait(&logger->ls) < 0){
     fprintf(stderr, "Impossibile scrivere sul file di log\n");
     if(DEBUG) perror("write_log: error in sem_wait");
-    return 0;
+    return -1;
   }
 
   ret = write(logger->fd, buffer, strlen(buffer));
@@ -28,7 +28,7 @@ int   write_log(logger_t* logger, const char* str, ...) {
   if (sem_post(&logger->ls) < 0) {
     fprintf(stderr, "Impossibile scrivere sul file di log\n");
     if(DEBUG) perror("destroy_log: error in sem_wait");
-    return 0;
+    return -1;
   }
   return ret;
 }

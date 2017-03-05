@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 
 #define DEBUG 					1
+#define LOG 						0
 #define SERVER_PORT     8583
 #define MAX_CONN_QUEUE	10
 
@@ -31,6 +32,8 @@ sem_t 		client_list_semaphore;
 client_l 	client_list;
 client_l 	last_client;
 
+void 	client_list_wait();
+void 	client_list_post();
 int 	server_init(int* sock_desc, struct sockaddr_in* sock_addr);
 int 	add_cl(client_l client);
 int 	remove_cl(int id);

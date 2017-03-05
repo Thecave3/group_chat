@@ -1,12 +1,30 @@
 #include "server_utils.h"
 
+int				id_clients;
+
+void 	client_list_wait() {
+	if (sem_wait(&client_list_semaphore)) {
+		if (DEBUG) perror("client_list_semaphore: error in wait");
+		fprintf(stderr, "Impossibile registrare il client");
+		return;
+	}
+}
+
+void 	client_list_post() {
+	if (sem_post(&client_list_semaphore)) {
+		if (DEBUG) perror("client_list_semaphore: error in wait");
+		fprintf(stderr, "Impossibile registrare il client");
+		return;
+	}
+}
+
 int		add_cl(client_l client) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
 		return 0;
 	}
-	client->client_id = nclients;
+	client->client_id = id_clients;
 	if (nclients == 0) {
 		client_list = client;
 		last_client = client;
@@ -17,6 +35,7 @@ int		add_cl(client_l client) {
 		last_client = client;
 	}
 	nclients++;
+	id_clients++;
 	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in post");
 		fprintf(stderr, "Impossibile registrare il client");
@@ -29,38 +48,40 @@ int 	remove_cl(int id) {
 	if (sem_wait(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in wait");
 		fprintf(stderr, "Impossibile registrare il client");
-		return 0;
+		return -1;
 	}
-	client_l aux;
-
-	if (client_list == NULL && last_client == NULL) return -1;
-	aux = last_client;
-	if (aux->client_id == id) {
-		if (aux->prev != NULL)
-			last_client = aux->prev;
-		else {
-			client_list = NULL;
-			last_client = NULL;
-		}
-		free(aux);
+	client_l aux, bux;
+	if (client_list == NULL) {
 		if (sem_post(&client_list_semaphore)) {
 			if (DEBUG) perror("client_list_semaphore: error in post");
 			fprintf(stderr, "Impossibile registrare il client");
-			return 0;
+			return -1;
 		}
-		nclients--;
-		return 0;
 	}
 	aux = client_list;
 	while (aux != NULL) {
 		if (aux->client_id == id) {
-				client_l bux = aux;
-			  aux = bux->prev;
+			bux = aux;
+			if (aux->next == NULL && aux->prev == NULL) {
+				client_list = NULL;
+				last_client = NULL;
+			}
+			else if (aux->prev == NULL) {
+				client_list = aux->next;
+				client_list->prev = NULL;
+			}
+			else if (aux->next == NULL) {
+				last_client = aux->prev;
+				last_client->next = NULL;
+			}
+			else {
+				aux = bux->prev;
 				aux->next = bux->next;
 				aux = bux->next;
 				aux->prev = bux->prev;
-				free(bux);
-				break;
+			}
+			free(bux);
+			break;
 		}
 		aux = aux->next;
 	}
@@ -68,9 +89,9 @@ int 	remove_cl(int id) {
 	if (sem_post(&client_list_semaphore)) {
 		if (DEBUG) perror("client_list_semaphore: error in post");
 		fprintf(stderr, "Impossibile registrare il client");
-		return 0;
+		return -1;
 	}
-	return 1;
+	return 0;
 }
 
 int		server_init(int* sock_desc, struct sockaddr_in* sock_addr) {

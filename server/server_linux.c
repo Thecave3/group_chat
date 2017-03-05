@@ -20,15 +20,6 @@ int main(int argc, char const *argv[]) {
 	int									server_desc , client_desc, client_addr_len, ret;
 	char 								buffer[128];
 	struct sockaddr_in	server_addr , client_addr;
-	struct stat st = {0};
-
-	atexit(goodbye);
-  signal(SIGINT, exit);
-	server_init(&server_desc, &server_addr);
-
-	if (stat(LOG_PATH, &st) == -1) {
-		mkdir(LOG_PATH, 0700);
-	}
 
 	strcpy(buffer, LOG_PATH);
 	strcat(buffer, "/");
@@ -36,11 +27,32 @@ int main(int argc, char const *argv[]) {
 	strcat(buffer, " - ");
 	strcat(buffer, get_time());
 
+	if (LOG) {
+		ret = mkdir(LOG_PATH, 0700);
+		if (ret == -1) {
+			if (DEBUG) perror("mkdir");
+			if (errno != EEXIST) exit(EXIT_FAILURE);
+		}
+	}
 
 	main_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
 
+	ret = atexit(goodbye);
+	if (ret != 0) {
+		if (LOG) write_log(main_logger, "atexit_faliure");
+		exit(EXIT_FAILURE);
+	}
+
+  if (signal(SIGINT, exit) == SIG_ERR) {
+		if (LOG) write_log(main_logger, "signal_faliure");
+		exit(EXIT_FAILURE);
+	}
+
+	ret = server_init(&server_desc, &server_addr);
+	if (ret < 1) exit(EXIT_FAILURE);
+
 	fprintf(stderr, "%s: Server started\n", get_time());
-	write_log(main_logger, "%s: Server started\n", get_time());
+	if (LOG) write_log(main_logger, "%s: Server started\n", get_time());
 
  	// Ciclo sentinella
 	client_addr_len = sizeof(client_addr);
@@ -88,7 +100,7 @@ void *init_client_routine(void *arg) {
 	int   		bytes_read = 0;
 	int   		query_ret;
 	int  		 	query_recv;
-	int				client_id = client->client_id;
+	int*			client_id = &client->client_id;
 	char*			client_name = client->client_name;
 	char*			client_ip = client->client_ip;
 	char			query[5];
@@ -99,10 +111,12 @@ void *init_client_routine(void *arg) {
     if (ret == -1 && errno == EINTR)
 			continue;
     if (ret == -1) {
+			if (LOG) write_log(main_logger, "recv_message: error in recv");
 			if (DEBUG) perror("recv_message: error in recv");
       pthread_exit(NULL);
     }
     if (ret == 0) {
+			if (LOG) write_log(main_logger, "recv_message: connection closed by client");
 			if (DEBUG) perror("recv_message: connection closed by client");
       pthread_exit(NULL);
     }
@@ -124,8 +138,8 @@ void *init_client_routine(void *arg) {
 	logger_t* client_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
 	*status = ONLINE;
 
-	write_log(client_logger, "%s\nLog of client %s : %s\n", get_time(), client_ip, client_name);
-	write_log(main_logger, "%s: New client connected %s : %s\n", get_time(), client_ip, client_name);
+	if (LOG) write_log(client_logger, "%s\nLog of client %s : %s\n", get_time(), client_ip, client_name);
+	if (LOG) write_log(main_logger, "%s: New client connected %s : %s\n", get_time(), client_ip, client_name);
 	if (DEBUG) fprintf(stderr, "%s: %s [%s] "KYEL"NEW_CONNECTION"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), client_name, client_ip);
 	add_cl(client);
 	while (1) {
@@ -136,10 +150,12 @@ void *init_client_routine(void *arg) {
 	    if (query_ret == -1 && errno == EINTR)
 				continue;
 	    if (query_ret == -1) {
+				if (LOG) write_log(client_logger, "recv_message: error in recv");
 				if (DEBUG) perror("recv_message: error in recv");
 				pthread_exit(NULL);
 	    }
 	    if (query_ret == 0) {
+				if (LOG) write_log(client_logger, "recv_message: connection closed by client");
 				if (DEBUG) perror("recv_message: connection closed by client");
 	      pthread_exit(NULL);
 	    }
@@ -151,30 +167,30 @@ void *init_client_routine(void *arg) {
 	  }
 	  query[query_recv-1] = '\0';
 		if (strcmp(query, "QUIT\0") == 0) {
-			remove_cl(client_id);
-			write_log(client_logger, "%s: Client disconnected\n", get_time());
-			destroy_log(client_logger);
-			write_log(main_logger, "%s: Client disconnected %s : %s\n", get_time(), client_ip, client_name);
+			remove_cl(*client_id);
+			if (LOG) write_log(client_logger, "%s: Client disconnected\n", get_time());
+			if (LOG) destroy_log(client_logger);
+			if (LOG) write_log(main_logger, "%s: Client disconnected %s : %s\n", get_time(), client_ip, client_name);
 			if (DEBUG) fprintf(stderr, "%s: %s [%s] "KGRN"ONLINE"KNRM" => "KCYN"CLOSE_CONNECTION"KNRM"\n", get_time(), client_name, client_ip);
 			break;
 		}
 		if (strcmp(query, "STOF\0") == 0) {
 			if (*status != OFFLINE) {
 				*status = OFFLINE;
-				write_log(client_logger, "%s: Change status Online => Offline\n", get_time());
+				if (LOG) write_log(client_logger, "%s: Change status Online => Offline\n", get_time());
 				if (DEBUG) fprintf(stderr,"%s: %s [%s] "KGRN"ONLINE"KNRM" => "KRED"OFFLINE"KNRM"\n", get_time(), client_name, client_ip);
 			}
 		}
 		if (strcmp(query, "STON\0") == 0){
 			if (*status != ONLINE) {
 				*status = ONLINE;
-				write_log(client_logger, "%s: Change status Offline => Online\n", get_time());
+				if (LOG) write_log(client_logger, "%s: Change status Offline => Online\n", get_time());
 				if (DEBUG) fprintf(stderr, "%s: %s [%s] "KRED"OFFLINE"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), client_name, client_ip);
 			}
 		}
 		if (strcmp(query, "LIST\0") == 0) {
 			send_cl(client_desc);
-			write_log(client_logger, "%s: Client asked the list\n", get_time());
+			if (LOG) write_log(client_logger, "%s: Client asked the list\n", get_time());
 			if (DEBUG) fprintf(stderr, "%s: %s [%s] >> "KWHT"LIST"KNRM"\n", get_time(), client_name, client_ip);
 		}
 	}
@@ -183,16 +199,19 @@ void *init_client_routine(void *arg) {
 
 
 void 	goodbye () {
-	fprintf(stderr, "\n");
-	write_log(main_logger, "%s: Server halted\n", get_time());
-	destroy_log(main_logger);
-	if (DEBUG) fprintf(stderr, "Svuoto la lista dei client\n");
+	fprintf(stderr, "\nNumber of clients: %d\n", nclients);
+	if (LOG) write_log(main_logger, "%s: Server halted\nLast clients connected:\n", get_time());
+	client_list_wait();
 	while (client_list != NULL) {
 		client_l aux = client_list;
-		if(DEBUG) fprintf(stderr, "%d %s %s\n",aux->client_id, aux->client_ip, aux->client_name);
+		fprintf(stderr, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
+		if (DEBUG && LOG) write_log(main_logger, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
 		client_list = client_list->next;
 		free(aux);
 	}
+	client_list_post();
+	if (DEBUG && LOG) write_log(main_logger, "END\n");
+	if (LOG) destroy_log(main_logger);
 	sem_destroy(&client_list_semaphore);
 	fprintf(stderr, "The Server say goodbye!\n");
 }
