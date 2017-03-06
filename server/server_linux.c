@@ -3,15 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "../libs/logger.h"
 #include "../libs/colors.h"
 #include "../libs/server_utils.h"
 #include "../libs/server_protocol.h"
 
-logger_t* main_logger;
 #define LOG_PATH ".logs"
+
+logger_t* main_logger;
+int log_on = 0, debug_on = 0;
 
 void *init_client_routine(void* arg);
 void 	goodbye ();
@@ -21,45 +26,44 @@ int main(int argc, char const *argv[]) {
 	char 								buffer[128];
 	struct sockaddr_in	server_addr , client_addr;
 
+	for (int i = 0; i < argc; i++) {
+		if(strcmp(argv[i], "-l") == 0) log_on = 1;
+		if(strcmp(argv[i], "-d") == 0) debug_on = 1;
+	}
+
 	strcpy(buffer, LOG_PATH);
 	strcat(buffer, "/");
 	strcat(buffer, "Server_log");
 	strcat(buffer, " - ");
 	strcat(buffer, get_time());
 
-	if (LOG) {
-		ret = mkdir(LOG_PATH, 0700);
-		if (ret == -1) {
-			if (DEBUG) perror("mkdir");
-			if (errno != EEXIST) exit(EXIT_FAILURE);
-		}
+	if(mkdir(LOG_PATH, 0700) == -1 && errno != EEXIST) {
+		if (debug_on) perror("mkdir");
+		exit(EXIT_FAILURE);
 	}
 
-	main_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	if (log_on) main_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
 
 	ret = atexit(goodbye);
 	if (ret != 0) {
-		if (LOG) write_log(main_logger, "atexit_faliure");
+		if (log_on) write_log(main_logger, "atexit_faliure: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
   if (signal(SIGINT, exit) == SIG_ERR) {
-		if (LOG) write_log(main_logger, "signal_faliure");
+		if (log_on && debug_on) write_log(main_logger, "signal_faliure: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	ret = server_init(&server_desc, &server_addr);
 	if (ret < 1) exit(EXIT_FAILURE);
 
-	fprintf(stderr, "%s: Server started\n", get_time());
-	if (LOG) write_log(main_logger, "%s: Server started\n", get_time());
-
  	// Ciclo sentinella
 	client_addr_len = sizeof(client_addr);
 	while(1) {
 		client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
     if (client_desc < 0) {
-			if (DEBUG) perror("client_desc: error in accept");
+			if (log_on && debug_on) write_log(main_logger, "main: error in accept: %s\n", strerror(errno));
 			fprintf(stderr, "Impossibile connettersi al client\n");
 			continue;
     }
@@ -76,13 +80,13 @@ int main(int argc, char const *argv[]) {
 		pthread_t* init_client_thread = malloc(sizeof(pthread_t));
 		ret = pthread_create(init_client_thread, NULL, init_client_routine,(void*) thread_arg);
 		if (ret != 0) {
-			if (DEBUG) fprintf(stderr, "init_client_thread: error in ptrhead_create: %s\n", strerror(ret));
+			if (log_on && debug_on) write_log(main_logger, "main: error in ptrhead_create: %s\n", strerror(ret));
 			fprintf(stderr, "Impossibile connettersi al client\n");
 			continue;
 		}
 		ret = pthread_detach(*init_client_thread);
 		if (ret != 0) {
-			if (DEBUG) fprintf(stderr, "init_client_thread: error in ptrhead_detach: %s\n", strerror(ret));
+			if (log_on && debug_on) write_log(main_logger, "main: error in ptrhead_detach: %s\n", strerror(ret));
 			fprintf(stderr, "Impossibile connettersi al client\n");
 			continue;
 		}
@@ -105,20 +109,19 @@ void *init_client_routine(void *arg) {
 	char*			client_ip = client->client_ip;
 	char			query[5];
 	char 			buffer[128];
+	logger_t*	client_logger;
 
   while(1) {
     ret = recv(client_desc, client_name + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR)
 			continue;
     if (ret == -1) {
-			if (LOG) write_log(main_logger, "recv_message: error in recv");
-			if (DEBUG) perror("recv_message: error in recv");
+			if (log_on && debug_on) write_log(main_logger, "recv_message: error in recv: %s\n", strerror(errno));
       pthread_exit(NULL);
     }
     if (ret == 0) {
-			if (LOG) write_log(main_logger, "recv_message: connection closed by client");
-			if (DEBUG) perror("recv_message: connection closed by client");
-      pthread_exit(NULL);
+			if (log_on && debug_on) write_log(main_logger, "recv_message: connection closed by client: %s\n", strerror(errno));
+			pthread_exit(NULL);
     }
     bytes_read++;
     if (client_name[bytes_read-1] == '\n' ||
@@ -135,12 +138,11 @@ void *init_client_routine(void *arg) {
 	strcat (buffer, get_time());
 	strcat (buffer, ".txt");
 
-	logger_t* client_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	if (log_on) client_logger = new_log(buffer, O_WRONLY | O_CREAT | O_APPEND, 0666);
 	*status = ONLINE;
 
-	if (LOG) write_log(client_logger, "%s\nLog of client %s : %s\n", get_time(), client_ip, client_name);
-	if (LOG) write_log(main_logger, "%s: New client connected %s : %s\n", get_time(), client_ip, client_name);
-	if (DEBUG) fprintf(stderr, "%s: %s [%s] "KYEL"NEW_CONNECTION"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), client_name, client_ip);
+	if (log_on) write_log(client_logger, "%s\nLog of client %s : %s\n", get_time(), client_ip, client_name);
+	if (log_on) write_log(main_logger, "%s: New client connected %s : %s\n", get_time(), client_ip, client_name);
 	add_cl(client);
 	while (1) {
 		query_recv = 0;
@@ -150,13 +152,12 @@ void *init_client_routine(void *arg) {
 	    if (query_ret == -1 && errno == EINTR)
 				continue;
 	    if (query_ret == -1) {
-				if (LOG) write_log(client_logger, "recv_message: error in recv");
-				if (DEBUG) perror("recv_message: error in recv");
+				if (log_on && debug_on) write_log(client_logger, "recv_message: error in recv: %s\n", strerror(errno));
 				pthread_exit(NULL);
 	    }
 	    if (query_ret == 0) {
-				if (LOG) write_log(client_logger, "recv_message: connection closed by client");
-				if (DEBUG) perror("recv_message: connection closed by client");
+				if (log_on) write_log(client_logger, "recv_message: connection closed by client");
+				if (debug_on) perror("recv_message: connection closed by client");
 	      pthread_exit(NULL);
 	    }
 	    query_recv++;
@@ -168,50 +169,46 @@ void *init_client_routine(void *arg) {
 	  query[query_recv-1] = '\0';
 		if (strcmp(query, "QUIT\0") == 0) {
 			remove_cl(*client_id);
-			if (LOG) write_log(client_logger, "%s: Client disconnected\n", get_time());
-			if (LOG) destroy_log(client_logger);
-			if (LOG) write_log(main_logger, "%s: Client disconnected %s : %s\n", get_time(), client_ip, client_name);
-			if (DEBUG) fprintf(stderr, "%s: %s [%s] "KGRN"ONLINE"KNRM" => "KCYN"CLOSE_CONNECTION"KNRM"\n", get_time(), client_name, client_ip);
+			if (log_on) write_log(client_logger, "%s: Client disconnected\n", get_time());
+			if (log_on) destroy_log(client_logger);
+			if (log_on) write_log(main_logger, "%s: Client disconnected %s : %s\n", get_time(), client_ip, client_name);
 			break;
 		}
 		if (strcmp(query, "STOF\0") == 0) {
 			if (*status != OFFLINE) {
 				*status = OFFLINE;
-				if (LOG) write_log(client_logger, "%s: Change status Online => Offline\n", get_time());
-				if (DEBUG) fprintf(stderr,"%s: %s [%s] "KGRN"ONLINE"KNRM" => "KRED"OFFLINE"KNRM"\n", get_time(), client_name, client_ip);
-			}
+				if (log_on) write_log(client_logger, "%s: Change status Online => Offline\n", get_time());
+				}
 		}
 		if (strcmp(query, "STON\0") == 0){
 			if (*status != ONLINE) {
 				*status = ONLINE;
-				if (LOG) write_log(client_logger, "%s: Change status Offline => Online\n", get_time());
-				if (DEBUG) fprintf(stderr, "%s: %s [%s] "KRED"OFFLINE"KNRM" => "KGRN"ONLINE"KNRM"\n", get_time(), client_name, client_ip);
-			}
+				if (log_on) write_log(client_logger, "%s: Change status Offline => Online\n", get_time());
+				}
 		}
 		if (strcmp(query, "LIST\0") == 0) {
 			send_cl(client_desc);
-			if (LOG) write_log(client_logger, "%s: Client asked the list\n", get_time());
-			if (DEBUG) fprintf(stderr, "%s: %s [%s] >> "KWHT"LIST"KNRM"\n", get_time(), client_name, client_ip);
-		}
+			if (log_on) write_log(client_logger, "%s: Client asked the list\n", get_time());
+			}
 	}
 	pthread_exit(NULL);
 }
 
-
 void 	goodbye () {
 	fprintf(stderr, "\nNumber of clients: %d\n", nclients);
-	if (LOG) write_log(main_logger, "%s: Server halted\nLast clients connected:\n", get_time());
+	if (log_on) write_log(main_logger, "%s: Server halted\n", get_time());
+	if (debug_on && log_on) write_log(main_logger,"Last clients connected:\n");
 	client_list_wait();
 	while (client_list != NULL) {
 		client_l aux = client_list;
 		fprintf(stderr, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
-		if (DEBUG && LOG) write_log(main_logger, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
+		if (debug_on && log_on) write_log(main_logger, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
 		client_list = client_list->next;
 		free(aux);
 	}
 	client_list_post();
-	if (DEBUG && LOG) write_log(main_logger, "END\n");
-	if (LOG) destroy_log(main_logger);
+	if (debug_on && log_on) write_log(main_logger, "END\n");
+	if (log_on) destroy_log(main_logger);
 	sem_destroy(&client_list_semaphore);
 	fprintf(stderr, "The Server say goodbye!\n");
 }
