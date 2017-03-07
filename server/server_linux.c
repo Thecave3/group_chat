@@ -99,6 +99,7 @@ int server_routine(int argc, char const *argv[]) {
 	fprintf(stderr, "Server Started\n");
 
 	daemon(0,1);
+
  	// Ciclo sentinella
 	client_addr_len = sizeof(client_addr);
 	while(1) {
