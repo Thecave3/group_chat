@@ -13,18 +13,56 @@
 #include "../libs/server_utils.h"
 #include "../libs/server_protocol.h"
 
-#define LOG_PATH ".logs"
+#define LOG_PATH "/tmp/Talk_Server_Log"
 
 logger_t* main_logger;
 int log_on = 0, debug_on = 0;
 
+int server_routine(int argc, char const *argv[]);
 void *init_client_routine(void* arg);
 void 	goodbye ();
 
 int main(int argc, char const *argv[]) {
+	for (int i = 0; i < argc; i++) {
+		pid_t pid;
+		if(strcmp(argv[i], "-s") == 0) {
+			pid = fork();
+			if (pid < 0) {
+				perror("fork");
+				exit(EXIT_FAILURE);
+			}
+			if (pid > 0) {
+				server_routine(argc,argv);
+			}
+			break;
+		}
+		if(strcmp(argv[i], "-k") == 0)  {
+			FILE *fp;
+			char buffer[1024];
+			sprintf(buffer, "ps -ef | grep %s | grep -v grep | awk '{print $2}'", argv[0]);
+			fp = popen(buffer, "r");
+			if (fp == NULL) {
+				perror("popen");
+				exit(EXIT_FAILURE);
+			}
+			i = 0;
+			fgets(buffer, sizeof(buffer)-1, fp);
+			pclose(fp);
+			pid = atoi(buffer);
+			kill(pid, SIGINT);
+			break;
+		}
+	}
+	exit(EXIT_SUCCESS);
+}
+
+int server_routine(int argc, char const *argv[]) {
 	int									server_desc , client_desc, client_addr_len, ret;
 	char 								buffer[128];
 	struct sockaddr_in	server_addr , client_addr;
+
+	client_list = NULL;
+	last_client = NULL;
 
 	for (int i = 0; i < argc; i++) {
 		if(strcmp(argv[i], "-l") == 0) log_on = 1;
@@ -50,7 +88,7 @@ int main(int argc, char const *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-  if (signal(SIGINT, exit) == SIG_ERR) {
+	if (signal(SIGINT, exit) == SIG_ERR) {
 		if (log_on && debug_on) write_log(main_logger, "signal_faliure: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -58,6 +96,9 @@ int main(int argc, char const *argv[]) {
 	ret = server_init(&server_desc, &server_addr);
 	if (ret < 1) exit(EXIT_FAILURE);
 
+	fprintf(stderr, "Server Started\n");
+
+	daemon(0,1);
  	// Ciclo sentinella
 	client_addr_len = sizeof(client_addr);
 	while(1) {
@@ -195,7 +236,6 @@ void *init_client_routine(void *arg) {
 }
 
 void 	goodbye () {
-	fprintf(stderr, "\nNumber of clients: %d\n", nclients);
 	if (log_on) write_log(main_logger, "%s: Server halted\n", get_time());
 	if (debug_on && log_on) write_log(main_logger,"Last clients connected:\n");
 	client_list_wait();
@@ -210,5 +250,5 @@ void 	goodbye () {
 	if (debug_on && log_on) write_log(main_logger, "END\n");
 	if (log_on) destroy_log(main_logger);
 	sem_destroy(&client_list_semaphore);
-	fprintf(stderr, "The Server say goodbye!\n");
+	fprintf(stderr, "Server_Halted\n");
 }
