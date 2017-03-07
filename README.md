@@ -3,7 +3,7 @@ This repo contains the project for "Sistemi Operativi" - Sapienza Univ. of Rome 
 
 Officially we're coding only UNIX client, but maybe we'll create also the Windows client.
 
-Server side is by Giorgio Dramis (che puzza).
+Server side is by Giorgio Dramis.
 Client side is by Andrea Lacava.
 
 
@@ -32,7 +32,7 @@ sviluppare per uno dei due sistemi.
 
 # server_linux
 
-biuld 0.1
+Build 0.1
 * Mantiene una lista dei client connessi e del loro stato {ONLINE, OFFLINE}
 * Restituisce una lista di client connessi con stato ONLINE
 * Aggiunto un log del server e delle interazioni con i client su file per il monitoraggio
