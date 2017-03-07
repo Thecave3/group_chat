@@ -18,25 +18,25 @@
 logger_t* main_logger;
 int log_on = 0, debug_on = 0;
 
-int server_routine(int argc, char const *argv[]);
-void *init_client_routine(void* arg);
+int 	server_routine(int argc, char const *argv[]);
+void*	client_routine(void* arg);
 void 	goodbye ();
 
-int main(int argc, char const *argv[]) {
-	for (int i = 0; i < argc; i++) {
+int 	main(int argc, char const *argv[]) {
+	int check = 0;
+	for (int i = 1; i < argc; i++) {
 		pid_t pid;
-		if(strcmp(argv[i], "-s") == 0) {
+		if(strcmp(argv[i], "--start") == 0) {
 			pid = fork();
 			if (pid < 0) {
 				perror("fork");
 				exit(EXIT_FAILURE);
 			}
-			if (pid > 0) {
-				server_routine(argc,argv);
-			}
+			if (pid > 0) server_routine(argc,argv);
+			check++;
 			break;
 		}
-		if(strcmp(argv[i], "-k") == 0)  {
+		else if(strcmp(argv[i], "--kill") == 0)  {
 			FILE *fp;
 			char buffer[1024];
 			sprintf(buffer, "ps -ef | grep %s | grep -v grep | awk '{print $2}'", argv[0]);
@@ -49,14 +49,28 @@ int main(int argc, char const *argv[]) {
 			fgets(buffer, sizeof(buffer)-1, fp);
 			pclose(fp);
 			pid = atoi(buffer);
+			if (pid == getpid()) {
+				fprintf(stderr, "Server not running\n");
+				check++;
+				break;
+			}
 			kill(pid, SIGINT);
+			check++;
+			break;
+		}
+		else if(strcmp(argv[i], "-l") == 0) continue;
+		else if(strcmp(argv[i], "-ld") == 0) continue;
+		else if(strcmp(argv[i], "--help") == 0) {
+			fprintf(stderr,  "usage %s ACTION OPTION\nACTION:\n\t--start: start the server\n\t--kill:  kill the server\nOPTION:\n\t-l:  enable log system\n\t-ld: enable log system in debug mode\n", argv[0]);
+			check++;
 			break;
 		}
 	}
+	if (check == 0) fprintf(stderr, "Type: %s --help\n", argv[0]);
 	exit(EXIT_SUCCESS);
 }
 
-int server_routine(int argc, char const *argv[]) {
+int 	server_routine(int argc, char const *argv[]) {
 	int									server_desc , client_desc, client_addr_len, ret;
 	char 								buffer[128];
 	struct sockaddr_in	server_addr , client_addr;
@@ -65,8 +79,15 @@ int server_routine(int argc, char const *argv[]) {
 	last_client = NULL;
 
 	for (int i = 0; i < argc; i++) {
-		if(strcmp(argv[i], "-l") == 0) log_on = 1;
-		if(strcmp(argv[i], "-d") == 0) debug_on = 1;
+		if(strcmp(argv[i], "-l") == 0) {
+			fprintf(stderr, "Log Enabled\n");
+			log_on = 1;
+		}
+		if(strcmp(argv[i], "-ld") == 0) {
+			fprintf(stderr, "Debug Enabled\n");
+			log_on = 1;
+			debug_on = 1;
+		}
 	}
 
 	strcpy(buffer, LOG_PATH);
@@ -120,7 +141,7 @@ int server_routine(int argc, char const *argv[]) {
 			(int)((client_addr.sin_addr.s_addr&0xFF0000)>>16),
 			(int)((client_addr.sin_addr.s_addr&0xFF000000)>>24));
 		pthread_t* init_client_thread = malloc(sizeof(pthread_t));
-		ret = pthread_create(init_client_thread, NULL, init_client_routine,(void*) thread_arg);
+		ret = pthread_create(init_client_thread, NULL, client_routine,(void*) thread_arg);
 		if (ret != 0) {
 			if (log_on && debug_on) write_log(main_logger, "main: error in ptrhead_create: %s\n", strerror(ret));
 			fprintf(stderr, "Impossibile connettersi al client\n");
@@ -137,7 +158,7 @@ int server_routine(int argc, char const *argv[]) {
   exit(EXIT_SUCCESS);
 }
 
-void *init_client_routine(void *arg) {
+void*	client_routine(void *arg) {
 	client_l 	client = (client_l) arg;
 
 	int*			status = &client->client_status;
