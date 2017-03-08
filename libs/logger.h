@@ -7,7 +7,7 @@
 #include <string.h>
 #include <semaphore.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 typedef struct logger_s {
   int   fd;

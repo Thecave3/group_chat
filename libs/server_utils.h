@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define DEBUG 					1
+#define DEBUG 					0
 #define LOG 						0
 #define SERVER_PORT     8583
 #define MAX_CONN_QUEUE	10

@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define DEBUG           1
+#define DEBUG           0
 #define QUERY_LEN       5
 #define SERVER_ADDRESS "127.0.0.1"
 #define SERVER_PORT     8583

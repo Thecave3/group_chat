@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "../libs/logger.h"
-#include "../libs/colors.h"
 #include "../libs/server_utils.h"
 #include "../libs/server_protocol.h"
 
@@ -24,9 +23,26 @@ void 	goodbye ();
 
 int 	main(int argc, char const *argv[]) {
 	int check = 0;
+	int check_pid;
+	pid_t pid = getpid();
+	FILE *fp;
+	char buffer[1024];
+	sprintf(buffer, "ps -ef | grep %s | grep -v grep | awk '{print $2}'", argv[0]);
+	fp = popen(buffer, "r");
+	if (fp == NULL) {
+		perror("popen");
+		exit(EXIT_FAILURE);
+	}
+	fgets(buffer, sizeof(buffer)-1, fp);
+	check_pid = atoi(buffer);
+	pclose(fp);
 	for (int i = 1; i < argc; i++) {
-		pid_t pid;
 		if(strcmp(argv[i], "--start") == 0) {
+			if (pid != check_pid) {
+				fprintf(stderr, "Server already started\n");
+				check++;
+				break;
+			}
 			pid = fork();
 			if (pid < 0) {
 				perror("fork");
@@ -37,17 +53,6 @@ int 	main(int argc, char const *argv[]) {
 			break;
 		}
 		else if(strcmp(argv[i], "--kill") == 0)  {
-			FILE *fp;
-			char buffer[1024];
-			sprintf(buffer, "ps -ef | grep %s | grep -v grep | awk '{print $2}'", argv[0]);
-			fp = popen(buffer, "r");
-			if (fp == NULL) {
-				perror("popen");
-				exit(EXIT_FAILURE);
-			}
-			i = 0;
-			fgets(buffer, sizeof(buffer)-1, fp);
-			pclose(fp);
 			pid = atoi(buffer);
 			if (pid == getpid()) {
 				fprintf(stderr, "Server not running\n");
@@ -84,7 +89,7 @@ int 	server_routine(int argc, char const *argv[]) {
 			log_on = 1;
 		}
 		if(strcmp(argv[i], "-ld") == 0) {
-			fprintf(stderr, "Debug Enabled\n");
+			fprintf(stderr, "Debug Log Enabled\n");
 			log_on = 1;
 			debug_on = 1;
 		}
