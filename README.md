@@ -30,9 +30,13 @@ l'applicazione client che per l'applicazione server.
 Per progetti misti Unix/Windows e' a scelta quale delle due applicazioni
 sviluppare per uno dei due sistemi.
 
-# server_linux
+## server_linux
 
 Build 0.1
 * Mantiene una lista dei client connessi e del loro stato {ONLINE, OFFLINE}
 * Restituisce una lista di client connessi con stato ONLINE
 * Aggiunto un log del server e delle interazioni con i client su file per il monitoraggio
+
+## client_linux
+
+* Still coding

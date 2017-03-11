@@ -1,31 +1,38 @@
 #include "../libs/common.h"
-
-#define DEFAULT_NAME "thecave3"
-#define MAX_LEN_NAME 8
+#include "../libs/client_linux_utils.h"
+#include "../libs/server_protocol.h"
 
 int main(int argc, char *argv[]) {
   int ret;
   int sock;
-  struct sockaddr_in server_addr = {0};
   char* name;
+  //char list_client[BUF_LEN];
+  char command[BUF_LEN];
 
-  if (argv[1] != NULL)
-      name = argv[1];
-  else
+  if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME)
+    name = argv[1];
+  else if(argv[1] != NULL && strlen(argv[1])>MAX_LEN_NAME){
+    printf("%sNome utente troppo lungo, nome utente massimo consentito: %d\n",KRED,MAX_LEN_NAME);
+    exit(EXIT_FAILURE);
+  }else
       name = DEFAULT_NAME;
 
-  printf("Your name is %s\n", name);
 
-  sock = socket(AF_INET,SOCK_STREAM,0);
-  ERROR_HELPER(sock,"Errore creazione socket: ");
-
-  server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(SERVER_PORT);
-  ret = connect(sock,(struct sockaddr*) &server_addr,sizeof(struct sockaddr_in));
-  ERROR_HELPER(ret,"Errore connect: ");
+  printf("Benvenuto %s\n", name);
+  sock = connect_to(SERVER_ADDRESS,SERVER_PORT);
 
 
+  //inviare nome send
+  ret = send_message(sock, name, MAX_LEN_NAME);
+  ERROR_HELPER(ret,"Errore invio del nome: ");
 
+  printf("Scrivi \"%s\" per aiuto\n",HELP);
+
+  while (1) {
+    printf("Inserisci un comando: ");
+    scanf("%s",command);
+    printf("\n");
+    command_request(command);
+  }
   return 0;
 }
