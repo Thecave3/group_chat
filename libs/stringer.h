@@ -3,7 +3,7 @@
 #include <string.h>
 
 
-
+//estrae la sottostringa ad index
 char* subString(char* string,int index){
   if (index>strlen(string))
     return "";

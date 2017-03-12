@@ -5,30 +5,38 @@
 int main(int argc, char *argv[]) {
   int ret;
   int sock;
+  int id_shared_memory;
+  long int key = 30;
+
   char name[MAX_LEN_NAME];
-  //char list_client[BUF_LEN];
   char command[BUF_LEN];
 
   if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
     strcpy(name,argv[1]);
     strcat(name, "\n");
-    fprintf(stderr, "%s\n", name);
   }
   else if(argv[1] != NULL && strlen(argv[1])>MAX_LEN_NAME){
     printf("%sNome utente troppo lungo, nome utente massimo consentito: %d\n",KRED,MAX_LEN_NAME);
     exit(EXIT_FAILURE);
   }
   else {
-    strcpy(name, "thecave3");
+    strcpy(name, DEFAULT_NAME);
     strcat(name, "\n");
-    fprintf(stderr, "%s", name);
   }
 
+  //todo finire creazione sharedmemory 32*MAX_CLIENTS
+  //id_shared_memory = shmget(key, ,);
+
+  //todo eliminare appena attiva sharedmemory
+  id_shared_memory =0;
 
 
-  printf("Benvenuto %s\n", name);
+
+
+  printf("Benvenuto %s", name);
+
+  printf("Provo a connettermi al server...\n");
   sock = connect_to(SERVER_ADDRESS,SERVER_PORT);
-
 
   //inviare nome send
   ret = send_message(sock, name, MAX_LEN_NAME);
@@ -41,7 +49,7 @@ int main(int argc, char *argv[]) {
     printf("Inserisci un comando: ");
     fgets(command,sizeof(command),stdin);
     printf("\n");
-    command_request(command,sock);
+    command_request(command,sock,id_shared_memory);
   }
   return 0;
 }
