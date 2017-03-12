@@ -6,7 +6,6 @@ int main(int argc, char *argv[]) {
   int ret;
   int sock;
   int id_shared_memory;
-  long int key = 30;
 
   char name[MAX_LEN_NAME];
   char command[BUF_LEN];
@@ -24,18 +23,17 @@ int main(int argc, char *argv[]) {
     strcat(name, "\n");
   }
 
-  //todo finire creazione sharedmemory 32*MAX_CLIENTS
-  //id_shared_memory = shmget(key, ,);
 
-  //todo eliminare appena attiva sharedmemory
-  id_shared_memory =0;
-
+  //0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no
+  id_shared_memory = shmget(IPC_PRIVATE,32*MAX_CLIENTS,IPC_CREAT|IPC_EXCL|0660);
+  ERROR_HELPER(id_shared_memory,"Errore creazione: ");
 
 
 
   printf("Benvenuto %s", name);
 
   printf("Provo a connettermi al server...\n");
+  //todo usare API di giorgio
   sock = connect_to(SERVER_ADDRESS,SERVER_PORT);
 
   //inviare nome send

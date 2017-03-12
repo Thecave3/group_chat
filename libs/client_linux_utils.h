@@ -97,9 +97,10 @@ void command_request(char* buffer,int sock_desc,int shared_mem_id) {
 
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
-      //todo nella fase finale dovrà inoltre inviare un segnale di chiusura a tutte le connessioni e
-      //di distruzione della zona di memoria condivisa
+      //todo nella fase finale dovrà inoltre inviare un segnale di chiusura a tutte le connessioni
       server_disconnect(sock_desc);
+      ret = shmctl(shared_mem_id,IPC_RMID,NULL);
+      ERROR_HELPER(ret,"Errore creazione memoria condivisa: ");
       exit(EXIT_SUCCESS);
     }else if (strncmp(buffer,CLEAR,strlen(CLEAR))==0) {
       clear_screen();
