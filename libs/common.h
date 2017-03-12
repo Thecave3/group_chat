@@ -24,4 +24,4 @@
 #define SERVER_PORT 8583
 #define MAX_CONN_QUEUE 10
 #define MAX_LEN_LIST 256
-#define MAX_LEN_NAME 8
+#define MAX_LEN_NAME 63

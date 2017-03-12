@@ -5,17 +5,25 @@
 int main(int argc, char *argv[]) {
   int ret;
   int sock;
-  char* name;
+  char name[MAX_LEN_NAME];
   //char list_client[BUF_LEN];
   char command[BUF_LEN];
 
-  if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME)
-    name = argv[1];
+  if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
+    strcpy(name,argv[1]);
+    strcat(name, "\n");
+    fprintf(stderr, "%s\n", name);
+  }
   else if(argv[1] != NULL && strlen(argv[1])>MAX_LEN_NAME){
     printf("%sNome utente troppo lungo, nome utente massimo consentito: %d\n",KRED,MAX_LEN_NAME);
     exit(EXIT_FAILURE);
-  }else
-      name = DEFAULT_NAME;
+  }
+  else {
+    strcpy(name, "thecave3");
+    strcat(name, "\n");
+    fprintf(stderr, "%s", name);
+  }
+
 
 
   printf("Benvenuto %s\n", name);

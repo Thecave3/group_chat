@@ -4,7 +4,6 @@
 #include "../libs/server_protocol.h"
 #include "../libs/common.h"
 
-#define DEFAULT_NAME "thecave3"
 #define LIST "list"
 #define CONNECT "connect"
 #define HELP "help"

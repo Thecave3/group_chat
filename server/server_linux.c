@@ -179,7 +179,7 @@ void*	client_routine(void *arg) {
 	char 			buffer[128];
 	logger_t*	client_logger;
 
-  while(1) {
+  while(bytes_read < 63) {
     ret = recv(client_desc, client_name + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR)
 			continue;
@@ -191,10 +191,9 @@ void*	client_routine(void *arg) {
 			if (log_on && debug_on) write_log(main_logger, "recv_message: connection closed by client: %s\n", strerror(errno));
 			pthread_exit(NULL);
     }
-    bytes_read++;
+		bytes_read++;
     if (client_name[bytes_read-1] == '\n' ||
-				client_name[bytes_read-1] ==  '\0' ||
-				bytes_read == 63)
+				client_name[bytes_read-1] ==  '\0')
 			break;
   }
   client_name[bytes_read-1] = '\0';
