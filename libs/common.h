@@ -17,9 +17,11 @@
 
 
 
-#define MAX_LEN_NAME 8
+
 #define BUF_LEN 1024
 #define ERR_MSG_LENGTH 1024
 #define SERVER_ADDRESS "127.0.0.1"
 #define SERVER_PORT 8583
 #define MAX_CONN_QUEUE 10
+#define MAX_LEN_LIST 256
+#define MAX_LEN_NAME 8

@@ -28,11 +28,12 @@ int main(int argc, char *argv[]) {
 
   printf("Scrivi \"%s\" per aiuto\n",HELP);
 
+
   while (1) {
     printf("Inserisci un comando: ");
-    scanf("%s",command);
+    fgets(command,sizeof(command),stdin);
     printf("\n");
-    command_request(command);
+    command_request(command,sock);
   }
   return 0;
 }

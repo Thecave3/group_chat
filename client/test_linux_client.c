@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/stat.h>
+#include "../libs/common.h"
 #include "../libs/server_protocol.h"
 
 int sock_desc;
@@ -17,7 +18,7 @@ void goodbye() {
 
 int main(int argc, char* argv[]) {
   int                 ret;
-  char                buffer[256];
+  char                buffer[MAX_LEN_LIST];
   struct sockaddr_in  sock_addr;
 
   atexit(goodbye);
