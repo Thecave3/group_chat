@@ -49,5 +49,6 @@ int main(int argc, char *argv[]) {
     printf("\n");
     command_request(command,sock,id_shared_memory);
   }
+
   return 0;
 }

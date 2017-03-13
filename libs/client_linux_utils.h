@@ -14,6 +14,10 @@
 #define QUIT "quit"
 #define MIN_CMD_LEN 4
 
+#define STON "STON\0"
+#define STOF "STOF\0"
+
+
 #define EXIT_SUCCESS 0
 
 
@@ -63,23 +67,29 @@ void display_commands() {
 }
 
 
-//parsa la lista list e la inserisce all'interno di area di memoria shared_mem_id
-//restituisce EXIT_SUCCESS in caso di successo altrimenti EXIT_FAILURE
-int parseList(char* list,int shared_mem_id){
 
-  return EXIT_SUCCESS;
-}
+//riceve in input un nome utente, lo cerca all'interno della memoria condivisa e instaura una connessione verso di esso
+ void end_end_chat(char* user,int id_shared_memory){
+   //lettura memoria condivisa
+   char* c;
+   c = shmat(id_shared_memory, 0 , SHM_R);
+   if ( c == (char*) -1 )
+     ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
+   printf("Contenuto memoria condivisa: \n");
+   printf("%s\n", c);
 
+   return;
+ }
 
-
-void command_request(char* buffer,int sock_desc,int shared_mem_id) {
+void command_request(char* buffer,int sock_desc,int id_shared_memory) {
   char* user;
   char list[MAX_LEN_LIST];
   int ret;
   for(int i =0; i<MIN_CMD_LEN;i++){
     if(buffer[i]=='\0'){
-      printf("%sComando non riconosciuto, inserire \"help\" per maggiori informazioni\n",KRED);
+      printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
+      return;
       }
     }
 
@@ -91,15 +101,17 @@ void command_request(char* buffer,int sock_desc,int shared_mem_id) {
       ERROR_HELPER(ret,"Errore download lista: ");
       printf("%s\n",list);
 
-      ret = parseList(list,shared_mem_id);
-      ERROR_HELPER(ret,"Errore creazione memoria condivisa");
-
+      char* p;
+      p = shmat(id_shared_memory,0,SHM_W);
+      if(p == (char*) -1)
+        ERROR_HELPER(-1,"Errore scrittura memoria condivisa: ");
+      strncpy(p,list,strlen(list));
 
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
       //todo nella fase finale dovrà inoltre inviare un segnale di chiusura a tutte le connessioni
       server_disconnect(sock_desc);
-      ret = shmctl(shared_mem_id,IPC_RMID,NULL);
+      ret = shmctl(id_shared_memory,IPC_RMID,NULL);
       ERROR_HELPER(ret,"Errore creazione memoria condivisa: ");
       exit(EXIT_SUCCESS);
     }else if (strncmp(buffer,CLEAR,strlen(CLEAR))==0) {
@@ -107,6 +119,12 @@ void command_request(char* buffer,int sock_desc,int shared_mem_id) {
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
       printf("Hai scritto il comando connect verso %s\n",user);
+
+      //invio mesaggio di non disponibile al server
+      ret = send_message(sock_desc,STOF,sizeof(STOF));
+
+      return end_end_chat(user,id_shared_memory);
+
     }else{
       printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
