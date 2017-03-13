@@ -21,6 +21,5 @@
 #define BUF_LEN 1024
 #define ERR_MSG_LENGTH 1024
 #define MAX_CONN_QUEUE 10
-#define MAX_LEN_LIST 256
-#define MAX_LEN_NAME 63
-#define MAX_CLIENTS 5
+#define MAX_LEN_LIST 256 // ?? Che è
+#define MAX_CLIENTS 5 // ?? Che è

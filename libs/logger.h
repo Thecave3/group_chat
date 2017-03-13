@@ -1,3 +1,6 @@
+#ifndef LOGGER_H
+#define LOGGER_H
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <error.h>
@@ -17,3 +20,5 @@ typedef struct logger_s {
 logger_t* new_log (const char* path, int flags, mode_t mode);
 int       write_log (logger_t* logger, const char* str, ...);
 int       destroy_log (logger_t* logger);
+
+#endif

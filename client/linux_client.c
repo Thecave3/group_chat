@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
 
-  struct sockaddr_in sock_addr = {0};
-  sock = server_connect(&sock_addr, name, MAX_LEN_NAME);
+  // L'ho modificato perché altrimenti non compilava
+  sock = server_connect(name, "8080");
   ERROR_HELPER(sock,"Errore connssione al server: ");
 
   //0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no

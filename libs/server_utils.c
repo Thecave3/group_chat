@@ -133,22 +133,27 @@ int		server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 
 int 	send_cl(int sock_desc) {
 	int   		ret;
-	int				list_len = 0;
-	int   		bytes_send = 0;
-	int				buffer_len = 0;
-	char 			buffer[84];
+	int				list_len;
+	int				bytes_send;
+	int				data_buffer_len;
+	char 			data_buffer[38];
 	client_l	aux = client_list;
+	list_len = 0;
+	bytes_send = 0;
 
 	while (aux != NULL) {
 		if (aux->client_status == ONLINE) {
-			memset(buffer,0,84);
-			strcpy(buffer, aux->client_ip);
-			strcat(buffer,"\n");
-			strcat(buffer, aux->client_name);
-			strcat(buffer,"\n\r");
-			buffer_len = strlen(buffer);
-			while (bytes_send < buffer_len) {
-				ret = send(sock_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
+			fprintf(stderr, "%s\n", aux->client_name);
+			memset(data_buffer, 0, 38);
+			strcpy(data_buffer, aux->client_ip);
+			strcat(data_buffer,"\n");
+			strcat(data_buffer, aux->client_port);
+			strcat(data_buffer, "\n");
+			strcat(data_buffer, aux->client_name);
+			strcat(data_buffer,"\n\r");
+			data_buffer_len = strlen(data_buffer);
+			while (bytes_send < data_buffer_len) {
+				ret = send(sock_desc, data_buffer + bytes_send, data_buffer_len - bytes_send, 0);
 				if (ret == -1 && errno == EINTR) continue;
 				if (ret == -1) {
 					if (DEBUG) perror("send_cl: error in send");
@@ -162,15 +167,16 @@ int 	send_cl(int sock_desc) {
 		aux = aux->next;
 	}
 	ret = 0;
-	while (ret <= 0) {
+	while (ret == 0) {
 		ret = send(sock_desc, "\0", 1, 0);
 		if (ret == -1 && errno == EINTR) continue;
 		if (ret == -1) {
-			if (DEBUG) perror("send_message: error in send");
+			if (DEBUG) perror("send_cl: error in send");
 			return -1;
 		}
 	}
-	return list_len + 1;
+	list_len ++;
+	return list_len;
 }
 
 char* get_time() {

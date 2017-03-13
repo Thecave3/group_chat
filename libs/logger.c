@@ -1,13 +1,13 @@
 #include "logger.h"
 
-logger_t* new_log (const char* path, int flags, mode_t mode) {
+logger_t* new_log     (const char* path, int flags, mode_t mode) {
   logger_t* logger = malloc(sizeof(logger_t));
   if ((logger->fd = open(path, flags, mode)) < 0) return NULL;
   if((sem_init(&logger->ls, 0, 1)) < 0) return NULL;
   return logger;
 }
 
-int   write_log(logger_t* logger, const char* str, ...) {
+int       write_log   (logger_t* logger, const char* str, ...) {
   int ret;
   char buffer[256];
   va_list args;

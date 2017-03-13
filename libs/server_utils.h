@@ -1,3 +1,6 @@
+#ifndef SERVER_UTILS_H
+#define SERVER_UTILS_H
+
 #include <time.h>
 #include <stdio.h>
 #include <errno.h>
@@ -20,8 +23,9 @@ typedef struct client_s {
 	int			client_id;
 	int			client_desc;
 	int 		client_status;
-	char		client_ip[17];
-	char		client_name[63];
+	char		client_ip[16];
+	char		client_port[5];
+	char		client_name[13];
 	struct 	client_s* next;
 	struct 	client_s* prev;
 } client_t;
@@ -39,3 +43,5 @@ int 	add_cl(client_l client);
 int 	remove_cl(int id);
 int 	send_cl(int sock_desc);
 char* get_time();
+
+#endif

@@ -1,6 +1,36 @@
 #include "server_protocol.h"
 
-#define QUERY_LEN 5
+int server_connect(char* name, char* port) {
+  int   ret;
+  int   bytes_send = 0;
+  char  data_buffer[PACKET_LEN];
+  struct sockaddr_in* sock_addr = malloc(sizeof(struct sockaddr_in));
+  int   sock_desc = socket(AF_INET,SOCK_STREAM,0);
+
+  if (sock_desc <= 0) {
+    return -1;
+  }
+  memcpy (data_buffer	  ,port	, 4);
+  memcpy (data_buffer+4	,name , 12);
+  fprintf(stderr, "%s\n", data_buffer);
+  sock_addr->sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
+  sock_addr->sin_family = AF_INET;
+  sock_addr->sin_port = htons(SERVER_PORT);
+  if (connect(sock_desc,(struct sockaddr*) sock_addr,sizeof(struct sockaddr_in))) {
+    if (DEBUG) perror("server_connect: error in connect");
+    return -1;
+  }
+  while (bytes_send < PACKET_LEN) {
+    ret = send(sock_desc, data_buffer + bytes_send, PACKET_LEN - bytes_send, 0);
+    if (ret == -1 && errno == EINTR) continue;
+    if (ret == -1) {
+      if (DEBUG) perror("server_connect: error in send");
+      return -1;
+    }
+    bytes_send += ret;
+  }
+  return sock_desc;
+}
 
 int server_status (int sock_desc, int status) {
   int         ret;
@@ -32,34 +62,6 @@ int server_status (int sock_desc, int status) {
     query_send += ret;
   }
   return 1;
-}
-
-int server_connect(struct sockaddr_in* sock_addr, char* name, size_t name_len) {
-  int   ret;
-  int   bytes_send = 0;
-  int   sock_desc = socket(AF_INET,SOCK_STREAM,0);
-
-  if (sock_desc <= 0) {
-    return -1;
-  }
-  sock_addr->sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
-  sock_addr->sin_family = AF_INET;
-  sock_addr->sin_port = htons(SERVER_PORT);
-  if (connect(sock_desc,(struct sockaddr*) sock_addr,sizeof(struct sockaddr_in))) {
-    if (DEBUG) perror("server_connect: error in connect");
-    return -1;
-  }
-
-  while (bytes_send < name_len) {
-    ret = send(sock_desc, name + bytes_send, name_len - bytes_send, 0);
-    if (ret == -1 && errno == EINTR) continue;
-    if (ret == -1) {
-			if (DEBUG) perror("server_connect: error in send");
-      return -1;
-    }
-    bytes_send += ret;
-  }
-  return sock_desc;
 }
 
 int download_list(int sock_desc, char* buffer, size_t buff_len) {
@@ -109,7 +111,7 @@ int server_disconnect(int sock_desc) {
     }
     query_send += ret;
   }
-  return query_send;
+  return 1;
 }
 
 int recv_message(int socket_desc, char* buffer,  int buffer_len) {
