@@ -3,9 +3,7 @@
 #include "../libs/server_protocol.h"
 
 int main(int argc, char *argv[]) {
-  int ret;
-  int sock;
-  int id_shared_memory;
+  int ret,sock,id_shared_memory,pid,status,result;
 
   char name[MAX_LEN_NAME];
   char command[BUF_LEN];
@@ -28,10 +26,7 @@ int main(int argc, char *argv[]) {
   id_shared_memory = shmget(IPC_PRIVATE,32*MAX_CLIENTS,IPC_CREAT|IPC_EXCL|0660);
   ERROR_HELPER(id_shared_memory,"Errore creazione: ");
 
-
-
   printf("Benvenuto %s", name);
-
   printf("Provo a connettermi al server...\n");
   //todo usare API di giorgio
   sock = connect_to(SERVER_ADDRESS,SERVER_PORT);
@@ -40,15 +35,20 @@ int main(int argc, char *argv[]) {
   ret = send_message(sock, name, MAX_LEN_NAME);
   ERROR_HELPER(ret,"Errore invio del nome: ");
 
-  printf("Scrivi \"%s\" per aiuto\n",HELP);
-
-
-  while (1) {
-    printf("Inserisci un comando: ");
-    fgets(command,sizeof(command),stdin);
-    printf("\n");
-    command_request(command,sock,id_shared_memory);
+  pid = fork();
+  ERROR_HELPER(pid,"Errore sulla fork: ");
+  if (pid == 0) {
+    printf("Scrivi \"%s\" per aiuto\n",HELP);
+    while (1) {
+      printf("Inserisci un comando: ");
+      fgets(command,sizeof(command),stdin);
+      printf("\n");
+      command_request(command,sock,id_shared_memory);
+    }
+  }else{
+    printf("sono il padre che aspetta che il figlio finisca\n");
+    result = wait(&status);
+    ERROR_HELPER(result,"Errore processo wait");
   }
-
   return 0;
 }

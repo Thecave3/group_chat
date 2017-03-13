@@ -1,6 +1,8 @@
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <unistd.h>
 
 #include "colors.h"
 #include "stringer.h"
@@ -120,8 +122,8 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       user = subString(buffer,strlen(CONNECT)+1);
       printf("Hai scritto il comando connect verso %s\n",user);
 
-      //invio mesaggio di non disponibile al server
-      ret = send_message(sock_desc,STOF,sizeof(STOF));
+      //invio messaggio di non disponibile al server, da mettere all'interno del processo forkato
+      //ret = send_message(sock_desc,STOF,sizeof(STOF));
 
       return end_end_chat(user,id_shared_memory);
 
