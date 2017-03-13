@@ -68,19 +68,58 @@ void display_commands() {
   printf(" : Mostra questa lista\n\n");
 }
 
+//Verifica che l'utente user sia all'interno della shared memory,
+//se lo è allora lascia solo quell'utente in shared memory altrimenti l'area non viene toccata
+//ritorna 1 in caso vi sia, 0 in caso di utente non trovato
+int onList(char* user,int id_shared_memory){
+  //lettura memoria condivisa
+  char* c;
+  c = shmat(id_shared_memory, 0 , SHM_R);
+  if ( c == (char*) -1 )
+    ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
+  char* candidate;
+  for(int i = 0;c!=NULL;i++){
+    if(c[i]==user[0]){
+      candidate = (char*)malloc(strlen(user)*sizeof(char));
+      for(int j=0;j<strlen(user);j++){
+        if((i+j)>=strlen(c))
+          return 0;
+        candidate[j]=c[i+j];
+      }
+      if(strcmp(candidate,user) == 0){
+        free(candidate);
+        return 1;
+      }
+      free(candidate);
+    }
+  }
+  return 0;
+}
 
 
-//riceve in input un nome utente, lo cerca all'interno della memoria condivisa e instaura una connessione verso di esso
- void end_end_chat(char* user,int id_shared_memory){
-   //lettura memoria condivisa
-   char* c;
-   c = shmat(id_shared_memory, 0 , SHM_R);
-   if ( c == (char*) -1 )
-     ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
-   printf("Contenuto memoria condivisa: \n");
-   printf("%s\n", c);
+//apre e cerca all'interno della memoria condivisa il nome, l'IP address e la porta e instaura una connessione verso di esso
+//restituisce il descrittore della connessione
+void end_end_chat(int id_shared_memory){
+  char* c;
+  char* end_addr;
+  char* end_name;
+  //int end_port,socket;
+  c = shmat(id_shared_memory, 0 , SHM_R);
+  if ( c == (char*) -1 )
+    ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
+  printf("Contenuto shared memory:\n");
+  printf("%s\n",c);
 
-   return;
+  end_addr = parser(c,'\n');
+  end_name = parser(c+strlen(end_addr)+1,'\n');
+  //end_port = (int) parser(c+strlen(end_addr)+strlen(end_name)+2,'\n');
+  printf("Provo a connermi a %s all'indirizzo %s \n",end_name,end_addr);
+
+  //decommentare e cambiare funzione a int appena update server
+  /*socket = connect_to(end_addr,end_name);
+  ERROR_HELPER(socket,"Errore connessione verso utente :");
+  return socket;*/
+
  }
 
 void command_request(char* buffer,int sock_desc,int id_shared_memory) {
@@ -114,7 +153,7 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       //todo nella fase finale dovrà inoltre inviare un segnale di chiusura a tutte le connessioni
       server_disconnect(sock_desc);
       ret = shmctl(id_shared_memory,IPC_RMID,NULL);
-      ERROR_HELPER(ret,"Errore creazione memoria condivisa: ");
+      ERROR_HELPER(ret,"Errore cancellazione memoria condivisa: ");
       exit(EXIT_SUCCESS);
     }else if (strncmp(buffer,CLEAR,strlen(CLEAR))==0) {
       clear_screen();
@@ -122,11 +161,19 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       user = subString(buffer,strlen(CONNECT)+1);
       printf("Hai scritto il comando connect verso %s\n",user);
 
-      //invio messaggio di non disponibile al server, da mettere all'interno del processo forkato
-      //ret = send_message(sock_desc,STOF,sizeof(STOF));
-
-      return end_end_chat(user,id_shared_memory);
-
+      if(onList(user,id_shared_memory)){
+        //utente trovato, qui la shared memory deve essere ripulita ed all'interno devono rimanere
+        // nome utente, indirizzo IP e porta
+        //vengono bloccati stdin e stdout e viene mandato un segnale al processo in accept che deve lanciare
+        //end_end_chat
+        return end_end_chat(id_shared_memory); // temporaneo, eliminare e decommentare l'altro return;
+        //return;
+      }
+      else{
+        printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
+        printf("%s\n",KNRM);
+        return;
+      }
     }else{
       printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
