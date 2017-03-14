@@ -69,8 +69,6 @@ void display_commands() {
   printf(" : Mostra questa lista\n\n");
 }
 
-
-
 //Verifica che l'utente user sia all'interno della shared memory,
 //se lo è allora lascia solo quell'utente in shared memory altrimenti l'area non viene toccata
 //ritorna 1 in caso vi sia, 0 in caso di utente non trovato
@@ -162,7 +160,7 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       clear_screen();
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
-      printf("Hai scritto il comando connect verso %s",user);
+      //printf("Hai scritto il comando connect verso %s",user);
       if(onList(user,id_shared_memory)){
         //utente trovato, qui la shared memory deve essere ripulita ed all'interno devono rimanere
         // nome utente, indirizzo IP e porta
@@ -171,16 +169,28 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
         char* pt = shmat(id_shared_memory,0,SHM_R);
         if ( pt == (char*) -1 )
           ERROR_HELPER(-1,"Errore accesso shared memory: ");
+        char* courier;
+        char target_user[MAX_LEN_NAME];
+        char port[MAX_PORT_LEN];
+        char ip[MAX_IP_LEN];
 
-        char* target_user;
-        char* port;
-        char* ip;
-
-
-
-        printf("IP: %s\n",ip );
-        printf("Port: %s\n",port );
-        printf("Nome: %s\n",target_user );
+        courier = strtok(pt,"\n");
+        while (courier!= NULL) {
+          strcpy(ip,courier);
+          courier = strtok(NULL,"\n");
+          strcpy(port,courier);
+          courier=strtok(NULL,"\n");
+          strcpy(target_user,courier);
+          strcat(target_user,"\n");
+          if(strcmp(target_user,user)==0)
+            break;
+          courier= strtok(NULL,"\n");
+        }
+        printf("Lancio una connessione verso:\n");
+        printf("Nome: %s",target_user);
+        printf("Porta: %s\n",port);
+        printf("Indirizzo IP: ");
+        printf("%s\n",ip );
         return;
       }else{
         printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);

@@ -201,7 +201,7 @@ void 	server_exit () {
 	client_list_wait();
 	while (client_list != NULL) {
 		client_l aux = client_list;
-		//fprintf(stderr, "%s\n", aux->client_name);
+		fprintf(stderr, "%s\n", aux->client_name);
 		if (debug_on && log_on) write_log(main_logger, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
 		client_list = client_list->next;
 		free(aux);
