@@ -5,7 +5,7 @@
 #define DEFAULT_PORT "5678"
 
 int main(int argc, char *argv[]) {
-  int sock,id_shared_memory,pid,status,result;
+  int sock,id_shared_memory,pid,status,ret,listener;
 
   char name[MAX_LEN_NAME];
   char command[BUF_LEN];
@@ -33,6 +33,17 @@ int main(int argc, char *argv[]) {
     strcat(port, "\n");
   }
 
+  struct sigaction usr_action;
+  sigset_t block_mask;
+  pid_t child_id;
+
+  /* Establish the signal handler. */
+  sigfillset (&block_mask);
+  usr_action.sa_handler = tactical_change;
+  usr_action.sa_mask = block_mask;
+  usr_action.sa_flags = 0;
+  sigaction (SIGUSR1, &usr_action, NULL);
+
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
 
@@ -50,24 +61,41 @@ int main(int argc, char *argv[]) {
     printf("\nScrivi \"%s\" per aiuto\n",HELP);
     command_request(LIST,sock,id_shared_memory);
 
-    while (1) {
+    while (parent_status) {
       printf("Inserisci un comando: ");
       fgets(command,sizeof(command),stdin);
       printf("\n");
       command_request(command,sock,id_shared_memory);
     }
   }else{
-    //printf("sono il padre che aspetta che il figlio finisca\n");
-
-
-    result = wait(&status);
+    /*struct sockaddr* addr_listener = {0};
+    listener = socket(AF_INET,SOCK_STREAM,0);
+    ERROR_HELPER(listener,"Errore creazione server: ");
+    addr_listener.sin_family = AF_INET;
+    addr_listener.sin_port = htons(port);
+    addr_listener.sin_addr.s_addr= INADDR_ANY;
+    ret = bind(listener,addr_listener,sizeof(addr_listener));
+    ERROR_HELPER(ret,"Errore bind server: ");
+    ret = fcntl(listener,F_SETFL,O_NONBLOCK);
+    ERROR_HELPER(ret,"Errore sblocco server bloccante: ");*/
 
     //richiesta socket (lancia funzione end_end_chat)
     //dopo aver avuto il socket con la connessione con l'altro client
     //invia messaggio di non disponibile al server e apre un nuovo terminale e reindirizzandoci stdin e stdout
     //ret = send_message(sock_desc,STOF,sizeof(STOF));
 
-    ERROR_HELPER(result,"Errore processo wait");
+    while(parent_status){
+      //printf("dormo\n");
+      sleep(1);
+    }
+    printf("SONO TORNATO MERDE\n");
+
+    listener= end_end_chat(id_shared_memory);
+
+    //e da qui va lanciato il magico terminale che crea la chat
+
+    ret = wait(&status);
+    ERROR_HELPER(ret,"Errore processo wait");
   }
   return 0;
 }

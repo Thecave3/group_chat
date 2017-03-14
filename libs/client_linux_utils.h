@@ -3,6 +3,8 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <unistd.h>
+#include <fcntl.h>
+
 
 #include "colors.h"
 #include "stringer.h"
@@ -33,6 +35,16 @@
     } while(0)
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
+
+int parent_status = 1;
+
+//gestore del segnale SIGUSR1
+void tactical_change() {
+  if(parent_status)
+    parent_status = 0;
+  else
+    parent_status = 1;
+}
 
 
 void clear_screen() {
@@ -100,7 +112,7 @@ int onList(char* user,int id_shared_memory){
 
 //apre e cerca all'interno della memoria condivisa il nome, l'IP address e la porta e instaura una connessione verso di esso
 //restituisce il descrittore della connessione
-void end_end_chat(int id_shared_memory){
+int end_end_chat(int id_shared_memory){
   char* c;
   char* end_addr;
   char* end_name;
@@ -111,15 +123,15 @@ void end_end_chat(int id_shared_memory){
   printf("Contenuto shared memory:\n");
   printf("%s\n",c);
 
-  end_addr = parser(c,'\n');
-  end_name = parser(c+strlen(end_addr)+1,'\n');
+
+  //end_addr = parser(c,'\n');
+  //end_name = parser(c+strlen(end_addr)+1,'\n');
   //end_port = (int) parser(c+strlen(end_addr)+strlen(end_name)+2,'\n');
   printf("Provo a connermi a %s all'indirizzo %s \n",end_name,end_addr);
 
-  //decommentare e cambiare funzione a int appena update server
-  /*socket = connect_to(end_addr,end_name);
+  socket = connect_to(end_addr,end_name);
   ERROR_HELPER(socket,"Errore connessione verso utente :");
-  return socket;*/
+  return socket;
 
  }
 
@@ -164,8 +176,6 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       if(onList(user,id_shared_memory)){
         //utente trovato, qui la shared memory deve essere ripulita ed all'interno devono rimanere
         // nome utente, indirizzo IP e porta
-        //vengono bloccati stdin e stdout e viene mandato un segnale al processo in accept che deve lanciare
-        //end_end_chat
         char* pt = shmat(id_shared_memory,0,SHM_R);
         if ( pt == (char*) -1 )
           ERROR_HELPER(-1,"Errore accesso shared memory: ");
@@ -191,7 +201,15 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
         printf("Porta: %s\n",port);
         printf("Indirizzo IP: ");
         printf("%s\n",ip );
-        return;
+
+        //prendere e fare una becerissima pulizia di memoria per permettere a end_end_chat di prendere target port e ip
+
+
+        //invio segnale al processo
+        kill(getppid(),SIGUSR1);
+
+        //sarebbe opportuno prima di tornare bloccare un terminare ed aprirne un altro reindirizzandoci stdin e stdout
+        return ;
       }else{
         printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
         printf("%s\n",KNRM);
