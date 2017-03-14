@@ -2,11 +2,14 @@
 #include "../libs/client_linux_utils.h"
 #include "../libs/server_protocol.h"
 
+#define DEFAULT_PORT "5678"
+
 int main(int argc, char *argv[]) {
   int sock,id_shared_memory,pid,status,result;
 
   char name[MAX_LEN_NAME];
   char command[BUF_LEN];
+  char port[5];
 
   if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
     strcpy(name,argv[1]);
@@ -21,11 +24,20 @@ int main(int argc, char *argv[]) {
     strcat(name, "\n");
   }
 
+  if (argv[2]!= NULL && strlen(argv[2])<=4) {
+    strcpy(port,argv[2]);
+    strcat(port,"\n");
+  }else{
+    printf("%sAssegno automaticamente la porta %s %s\n",KNRM,DEFAULT_PORT,KNRM);
+    strcpy(port, DEFAULT_PORT);
+    strcat(port, "\n");
+  }
+
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
 
-  // L'ho modificato perché altrimenti non compilava
-  sock = server_connect(name, "8080");
+
+  sock = server_connect(name, port);
   ERROR_HELPER(sock,"Errore connssione al server: ");
 
   //0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no

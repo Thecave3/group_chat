@@ -40,6 +40,7 @@ void clear_screen() {
 }
 
 
+
 int connect_to(char* server,int port){
   int ret;
   int sock = socket(AF_INET,SOCK_STREAM,0);
@@ -67,6 +68,8 @@ void display_commands() {
   printf(">> %s",HELP);
   printf(" : Mostra questa lista\n\n");
 }
+
+
 
 //Verifica che l'utente user sia all'interno della shared memory,
 //se lo è allora lascia solo quell'utente in shared memory altrimenti l'area non viene toccata
@@ -159,17 +162,27 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       clear_screen();
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
-      printf("Hai scritto il comando connect verso %s\n",user);
-
+      printf("Hai scritto il comando connect verso %s",user);
       if(onList(user,id_shared_memory)){
         //utente trovato, qui la shared memory deve essere ripulita ed all'interno devono rimanere
         // nome utente, indirizzo IP e porta
         //vengono bloccati stdin e stdout e viene mandato un segnale al processo in accept che deve lanciare
         //end_end_chat
-        return end_end_chat(id_shared_memory); // temporaneo, eliminare e decommentare l'altro return;
-        //return;
-      }
-      else{
+        char* pt = shmat(id_shared_memory,0,SHM_R);
+        if ( pt == (char*) -1 )
+          ERROR_HELPER(-1,"Errore accesso shared memory: ");
+
+        char* target_user;
+        char* port;
+        char* ip;
+
+
+
+        printf("IP: %s\n",ip );
+        printf("Port: %s\n",port );
+        printf("Nome: %s\n",target_user );
+        return;
+      }else{
         printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
         printf("%s\n",KNRM);
         return;

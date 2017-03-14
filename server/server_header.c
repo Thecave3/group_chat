@@ -57,7 +57,7 @@ int 	server_routine(int argc, char const *argv[]) {
 	ret = server_init(&server_desc, &server_addr);
 	if (ret < 1) exit(EXIT_FAILURE);
 	fprintf(stderr, "Server Started\n");
-	//daemon(0,1);
+	daemon(0,1);
 
  	// Ciclo sentinella
 	client_addr_len = sizeof(client_addr);
@@ -201,7 +201,7 @@ void 	server_exit () {
 	client_list_wait();
 	while (client_list != NULL) {
 		client_l aux = client_list;
-		fprintf(stderr, "%s\n", aux->client_name);
+		//fprintf(stderr, "%s\n", aux->client_name);
 		if (debug_on && log_on) write_log(main_logger, "%d %d %s %s\n", aux->client_id, aux->client_status, aux->client_ip, aux->client_name);
 		client_list = client_list->next;
 		free(aux);

@@ -12,7 +12,7 @@ int server_connect(char* name, char* port) {
   }
   memcpy (data_buffer	  ,port	, 4);
   memcpy (data_buffer+4	,name , 12);
-  fprintf(stderr, "%s\n", data_buffer);
+  //fprintf(stderr, "%s\n", data_buffer); //compariva sul client, la ho disabilitata
   sock_addr->sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
   sock_addr->sin_family = AF_INET;
   sock_addr->sin_port = htons(SERVER_PORT);
