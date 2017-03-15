@@ -113,25 +113,34 @@ int onList(char* user,int id_shared_memory){
 //apre e cerca all'interno della memoria condivisa il nome, l'IP address e la porta e instaura una connessione verso di esso
 //restituisce il descrittore della connessione
 int end_end_chat(int id_shared_memory){
+  int ret;
   char* c;
-  char* end_addr;
-  char* end_name;
-  int end_port,socket;
+  char* cour;
+  char end_addr[MAX_IP_LEN];
+  char end_name[MAX_LEN_NAME];
+  char end_port[MAX_PORT_LEN];
+  int socket;
   c = shmat(id_shared_memory, 0 , SHM_R);
   if ( c == (char*) -1 )
     ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
-  printf("Contenuto shared memory:\n");
-  printf("%s\n",c);
+  //printf("Contenuto shared memory:\n");
+  //printf("%s\n",c);
+  cour = strtok(c,"\n");
+  strcpy(end_addr,c);
+  cour = strtok(NULL,"\n");
+  strcpy(end_port,cour);
+  cour = strtok(NULL,"\n");
+  strcpy(end_name,cour);
 
-  //end_addr = parser(c,'\n');
-  //end_name = parser(c+strlen(end_addr)+1,'\n');
-  //end_port = (int) parser(c+strlen(end_addr)+strlen(end_name)+2,'\n');
-  //printf("Provo a connermi a %s all'indirizzo %s \n",end_name,end_addr);
 
-//  socket = connect_to(end_addr,end_name);
-//  ERROR_HELPER(socket,"Errore connessione verso utente :");
-  return 0;
+  printf("Provo a connermi a %s all'indirizzo %s : %s \n",end_name,end_addr,end_port);
 
+  socket = connect_to(end_addr,atoi(end_name));
+  ERROR_HELPER(socket,"Errore connessione verso utente :");
+  ret = shmdt(c);
+  ERROR_HELPER(ret,"Errore scollegamento END2END: ");
+
+  return socket;
  }
 
 void command_request(char* buffer,int sock_desc,int id_shared_memory) {
@@ -157,8 +166,10 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       char* p;
       p = shmat(id_shared_memory,0,SHM_W);
       if(p == (char*) -1)
-        ERROR_HELPER(-1,"Errore scrittura memoria condivisa: ");
+        ERROR_HELPER(-1,"Errore agganciamento scrittura memoria condivisa: ");
       strncpy(p,list,strlen(list));
+      ret = shmdt(p);
+      ERROR_HELPER(ret,"Errore scollegamento LIST: ");
 
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
@@ -195,15 +206,27 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
             break;
           courier= strtok(NULL,"\n");
         }
-        printf("Lancio una connessione verso:\n");
+        //just 4 debug
+        /*printf("Lancio una connessione verso:\n");
         printf("Nome: %s",target_user);
         printf("Porta: %s\n",port);
         printf("Indirizzo IP: ");
-        printf("%s\n",ip );
+        printf("%s\n",ip );*/
+        ret = shmdt(pt);
+        ERROR_HELPER(ret,"Errore scollegamento lettura CONNECT :");
 
         //prendere e fare una becerissima pulizia di memoria per permettere a end_end_chat di prendere target port e ip
-
-
+        char* writer;
+        writer = shmat(id_shared_memory,0,SHM_W);
+        if(writer == (char*) -1)
+          ERROR_HELPER(-1,"Errore agganciamento scrittura CONNECT : ");
+        strncpy(writer,ip,strlen(list));
+        strcat(writer,"\n");
+        strncat(writer,port,strlen(port));
+        strcat(writer,"\n");
+        strncat(writer,target_user,strlen(target_user));
+        ret = shmdt(writer);
+        ERROR_HELPER(ret,"Errore scollegamento scrittura CONNECT: ");
         //invio segnale al processo
         kill(getppid(),SIGUSR1);
 

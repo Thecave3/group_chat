@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   pid = fork();
   ERROR_HELPER(pid,"Errore sulla fork: ");
   if (pid == 0) {
+    printf("MY PIDDO MY PIDDO %d\n",getpid() );
     printf("\nScrivi \"%s\" per aiuto\n",HELP);
     command_request(LIST,sock,id_shared_memory);
 
@@ -68,36 +69,59 @@ int main(int argc, char *argv[]) {
       command_request(command,sock,id_shared_memory);
     }
   }else{
-    /*struct sockaddr* addr_listener = {0};
+    struct sockaddr_in addr_listener = {0};
+    struct sockaddr_in client_addr = {0};
+    int addr_len = sizeof(struct sockaddr_in);
+    int chatter;
     listener = socket(AF_INET,SOCK_STREAM,0);
     ERROR_HELPER(listener,"Errore creazione server: ");
     addr_listener.sin_family = AF_INET;
-    addr_listener.sin_port = htons(port);
+    addr_listener.sin_port = htons(atoi(port));
     addr_listener.sin_addr.s_addr= INADDR_ANY;
-    ret = bind(listener,addr_listener,sizeof(addr_listener));
+    ret = bind(listener,(struct sockaddr*) &addr_listener,addr_len);
     ERROR_HELPER(ret,"Errore bind server: ");
+    ret = listen(listener,0); //la chat è endtoend
     ret = fcntl(listener,F_SETFL,O_NONBLOCK);
-    ERROR_HELPER(ret,"Errore sblocco server bloccante: ");*/
+    ERROR_HELPER(ret,"Errore sblocco server bloccante: ");
 
+    printf("PID FIGLIO secondo il padre %d\n",pid );
     //richiesta socket (lancia funzione end_end_chat)
     //dopo aver avuto il socket con la connessione con l'altro client
     //invia messaggio di non disponibile al server e apre un nuovo terminale e reindirizzandoci stdin e stdout
     //ret = send_message(sock_desc,STOF,sizeof(STOF));
 
     while(parent_status){
-      sleep(1);
+      chatter = accept(listener,(struct sockaddr*)&client_addr, (socklen_t*) &addr_len);
+      if (chatter == -1){
+        if(errno== EINTR ||errno == EAGAIN)
+          continue;
+        else
+          ERROR_HELPER(chatter, "Errore accept: ");
+      }
+      printf("bubu\n");
+
+      //ret = close(chatter);
+      //ERROR_HELPER(ret,"Errore chiusura chatter: ");
     }
+    ret = close(listener);
+    ERROR_HELPER(ret,"Errore chiusura listener:");
+
     printf("SONO TORNATO MERDE\n");
+    //decommentare a tempo debito
+    //listener= end_end_chat(id_shared_memory);
 
 
-    listener= end_end_chat(id_shared_memory);
-    printf("esco\n");
+
     //e da qui va lanciato il magico terminale che crea la chat
 
 
 
-    kill(pid,SIGINT);
+    kill(pid,SIGTERM);
     command_request(QUIT,sock,id_shared_memory);
+
+    printf("esco\n");
+
+
   }
   return 0;
 }
