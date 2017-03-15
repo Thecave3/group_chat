@@ -21,7 +21,7 @@
 #define BUF_LEN 1024
 #define ERR_MSG_LENGTH 1024
 #define MAX_CONN_QUEUE 10
-#define MAX_LEN_LIST 256 // ?? Che è
-#define MAX_CLIENTS 5 // ?? Che è
+#define MAX_LEN_LIST 256 // Lunghezza massima della lista dei clients
+#define MAX_CLIENTS 5 // Numero massimo di client che si possono connettere al server contemporaneamente
 #define MAX_IP_LEN 16
 #define MAX_PORT_LEN 5

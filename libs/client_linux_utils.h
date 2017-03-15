@@ -116,22 +116,21 @@ int end_end_chat(int id_shared_memory){
   char* c;
   char* end_addr;
   char* end_name;
-  //int end_port,socket;
+  int end_port,socket;
   c = shmat(id_shared_memory, 0 , SHM_R);
   if ( c == (char*) -1 )
     ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
   printf("Contenuto shared memory:\n");
   printf("%s\n",c);
 
-
   //end_addr = parser(c,'\n');
   //end_name = parser(c+strlen(end_addr)+1,'\n');
   //end_port = (int) parser(c+strlen(end_addr)+strlen(end_name)+2,'\n');
-  printf("Provo a connermi a %s all'indirizzo %s \n",end_name,end_addr);
+  //printf("Provo a connermi a %s all'indirizzo %s \n",end_name,end_addr);
 
-  socket = connect_to(end_addr,end_name);
-  ERROR_HELPER(socket,"Errore connessione verso utente :");
-  return socket;
+//  socket = connect_to(end_addr,end_name);
+//  ERROR_HELPER(socket,"Errore connessione verso utente :");
+  return 0;
 
  }
 
@@ -163,8 +162,8 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
 
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
-      //todo nella fase finale dovrà inoltre inviare un segnale di chiusura a tutte le connessioni
       server_disconnect(sock_desc);
+      kill(getppid(),SIGINT);
       ret = shmctl(id_shared_memory,IPC_RMID,NULL);
       ERROR_HELPER(ret,"Errore cancellazione memoria condivisa: ");
       exit(EXIT_SUCCESS);

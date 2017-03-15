@@ -5,7 +5,7 @@
 #define DEFAULT_PORT "5678"
 
 int main(int argc, char *argv[]) {
-  int sock,id_shared_memory,pid,status,ret,listener;
+  int sock,id_shared_memory,pid,ret,listener;
 
   char name[MAX_LEN_NAME];
   char command[BUF_LEN];
@@ -35,14 +35,14 @@ int main(int argc, char *argv[]) {
 
   struct sigaction usr_action;
   sigset_t block_mask;
-  pid_t child_id;
 
-  /* Establish the signal handler. */
+  /* Armare il signale*/
   sigfillset (&block_mask);
   usr_action.sa_handler = tactical_change;
   usr_action.sa_mask = block_mask;
   usr_action.sa_flags = 0;
-  sigaction (SIGUSR1, &usr_action, NULL);
+  ret = sigaction (SIGUSR1, &usr_action, NULL);
+  ERROR_HELPER(ret,"Errore armamento segnale SIGUSR1: ");
 
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
@@ -85,17 +85,19 @@ int main(int argc, char *argv[]) {
     //ret = send_message(sock_desc,STOF,sizeof(STOF));
 
     while(parent_status){
-      //printf("dormo\n");
       sleep(1);
     }
     printf("SONO TORNATO MERDE\n");
 
-    listener= end_end_chat(id_shared_memory);
 
+    listener= end_end_chat(id_shared_memory);
+    printf("esco\n");
     //e da qui va lanciato il magico terminale che crea la chat
 
-    ret = wait(&status);
-    ERROR_HELPER(ret,"Errore processo wait");
+
+
+    kill(pid,SIGINT);
+    command_request(QUIT,sock,id_shared_memory);
   }
   return 0;
 }
