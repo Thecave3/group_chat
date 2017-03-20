@@ -52,13 +52,12 @@ int main(int argc, char *argv[]) {
   ERROR_HELPER(sock,"Errore connssione al server: ");
 
   //0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no
-  id_shared_memory = shmget(IPC_PRIVATE,32*MAX_CLIENTS,IPC_CREAT|IPC_EXCL|0660);
+  id_shared_memory = shmget(IPC_PRIVATE,CLIENT_SIZE*MAX_CLIENTS,IPC_CREAT|IPC_EXCL|0660);
   ERROR_HELPER(id_shared_memory,"Errore creazione shared memory: ");
 
   pid = fork();
-  ERROR_HELPER(pid,"Errore sulla fork: ");
+  ERROR_HELPER(pid,"Errore fork: ");
   if (pid == 0) {
-    printf("MY PIDDO MY PIDDO %d\n",getpid() );
     printf("\nScrivi \"%s\" per aiuto\n",HELP);
     command_request(LIST,sock,id_shared_memory);
 
@@ -80,15 +79,10 @@ int main(int argc, char *argv[]) {
     addr_listener.sin_addr.s_addr= INADDR_ANY;
     ret = bind(listener,(struct sockaddr*) &addr_listener,addr_len);
     ERROR_HELPER(ret,"Errore bind server: ");
-    ret = listen(listener,0); //la chat è endtoend
+    ret = listen(listener,CLIENT_QUEUE);
     ret = fcntl(listener,F_SETFL,O_NONBLOCK);
     ERROR_HELPER(ret,"Errore sblocco server bloccante: ");
 
-    printf("PID FIGLIO secondo il padre %d\n",pid );
-    //richiesta socket (lancia funzione end_end_chat)
-    //dopo aver avuto il socket con la connessione con l'altro client
-    //invia messaggio di non disponibile al server e apre un nuovo terminale e reindirizzandoci stdin e stdout
-    //ret = send_message(sock_desc,STOF,sizeof(STOF));
 
     while(parent_status){
       chatter = accept(listener,(struct sockaddr*)&client_addr, (socklen_t*) &addr_len);
@@ -98,30 +92,26 @@ int main(int argc, char *argv[]) {
         else
           ERROR_HELPER(chatter, "Errore accept: ");
       }
-      printf("bubu\n");
-
       //ret = close(chatter);
       //ERROR_HELPER(ret,"Errore chiusura chatter: ");
     }
     ret = close(listener);
     ERROR_HELPER(ret,"Errore chiusura listener:");
 
-    printf("SONO TORNATO MERDE\n");
-    //decommentare a tempo debito
-    //listener= end_end_chat(id_shared_memory);
 
+    kill(pid,SIGTERM);
+
+    //invia messaggio di non disponibile al server e apre un nuovo terminale e reindirizzandoci stdin e stdout
+    ret = send_message(sock,STOF,sizeof(STOF));
+
+    listener= end_end_chat(id_shared_memory);
 
 
     //e da qui va lanciato il magico terminale che crea la chat
 
 
-
-    kill(pid,SIGTERM);
-    command_request(QUIT,sock,id_shared_memory);
-
     printf("esco\n");
-
-
+    command_request(QUIT,sock,id_shared_memory);
   }
   return 0;
 }

@@ -17,6 +17,8 @@
 #define CLEAR "clear"
 #define QUIT "quit"
 #define MIN_CMD_LEN 4
+#define CLIENT_SIZE 32
+#define CLIENT_QUEUE 1
 
 #define STON "STON\0"
 #define STOF "STOF\0"
@@ -133,7 +135,7 @@ int end_end_chat(int id_shared_memory){
   strcpy(end_name,cour);
 
 
-  printf("Provo a connermi a %s all'indirizzo %s : %s \n",end_name,end_addr,end_port);
+  printf("Provo a connermi a %s all'indirizzo %s:%s\n",end_name,end_addr,end_port);
 
   socket = connect_to(end_addr,atoi(end_name));
   ERROR_HELPER(socket,"Errore connessione verso utente :");
@@ -214,8 +216,6 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
         printf("%s\n",ip );*/
         ret = shmdt(pt);
         ERROR_HELPER(ret,"Errore scollegamento lettura CONNECT :");
-
-        //prendere e fare una becerissima pulizia di memoria per permettere a end_end_chat di prendere target port e ip
         char* writer;
         writer = shmat(id_shared_memory,0,SHM_W);
         if(writer == (char*) -1)
