@@ -38,9 +38,25 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
-int parent_status = 1;
+int parent_status = 1; // forse DEPRECATA
 
-//gestore del segnale SIGUSR1
+
+
+//Funzione che deve eseguire il thread di stdin
+void* mini_shell(void* arg){
+ printf("\nScrivi \"%s\" per aiuto\n",HELP);
+ command_request(LIST,sock,id_shared_memory);
+
+ while (parent_status) {
+   printf("Inserisci un comando: ");
+   fgets(command,sizeof(command),stdin);
+   printf("\n");
+   command_request(command,sock,id_shared_memory);
+ }
+}
+
+
+/*gestore del segnale SIGUSR1 POTREBBE ESSERE DEPRECATA
 void tactical_change() {
   if(parent_status)
     parent_status = 0;
@@ -52,7 +68,7 @@ void tactical_change() {
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
 }
-
+*/
 
 
 int connect_to(char* server,int port){
