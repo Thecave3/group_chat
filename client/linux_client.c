@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
   pthread_t t_input,t_output;
 
   if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
-    strcpy(name,argv[1]);
+    strncpy(name,argv[1],strlen(argv[1]));
     strcat(name, "\n");
   }
   else if(argv[1] != NULL && strlen(argv[1])>MAX_LEN_NAME){
@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
   else {
-    strcpy(name, DEFAULT_NAME);
+    strncpy(name, DEFAULT_NAME,strlen(DEFAULT_NAME));
     strcat(name, "\n");
   }
 
@@ -40,12 +40,14 @@ int main(int argc, char *argv[]) {
   printf("Provo a connettermi al server...\n");
 
 
-  sock = server_connect(name);
+  sock = server_connect(name); //devo aspettare che giorgio la cambi
   ERROR_HELPER(sock,"Errore connssione al server: ");
 
-  //0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no
+  /*0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no
   id_shared_memory = shmget(IPC_PRIVATE,CLIENT_SIZE*MAX_CLIENTS,IPC_CREAT|IPC_EXCL|0660);
   ERROR_HELPER(id_shared_memory,"Errore creazione shared memory: ");
+  Forse deprecata.
+  */
 
   /*Creo due thread diversi per gestire stdin e stdout e le operazioni di send e receive dal server*/
   ret = pthread_create(&t_input,NULL,mini_shell,NULL);
@@ -53,6 +55,7 @@ int main(int argc, char *argv[]) {
 
   ret = pthread_create(&t_output,NULL,/*funzione da definire*/,NULL);
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
+
 
 
   return 0;

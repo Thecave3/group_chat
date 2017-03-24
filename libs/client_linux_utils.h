@@ -42,20 +42,6 @@ int parent_status = 1; // forse DEPRECATA
 
 
 
-//Funzione che deve eseguire il thread di stdin
-void* mini_shell(void* arg){
- printf("\nScrivi \"%s\" per aiuto\n",HELP);
- command_request(LIST,sock,id_shared_memory);
-
- while (parent_status) {
-   printf("Inserisci un comando: ");
-   fgets(command,sizeof(command),stdin);
-   printf("\n");
-   command_request(command,sock,id_shared_memory);
- }
-}
-
-
 /*gestore del segnale SIGUSR1 POTREBBE ESSERE DEPRECATA
 void tactical_change() {
   if(parent_status)
@@ -230,6 +216,8 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
         printf("Porta: %s\n",port);
         printf("Indirizzo IP: ");
         printf("%s\n",ip );*/
+
+        /*Forse deprecato
         ret = shmdt(pt);
         ERROR_HELPER(ret,"Errore scollegamento lettura CONNECT :");
         char* writer;
@@ -243,10 +231,10 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
         strncat(writer,target_user,strlen(target_user));
         ret = shmdt(writer);
         ERROR_HELPER(ret,"Errore scollegamento scrittura CONNECT: ");
-        //invio segnale al processo
+        //invio segnale al processo forse deprecato
         kill(getppid(),SIGUSR1);
 
-        //sarebbe opportuno prima di tornare bloccare un terminare ed aprirne un altro reindirizzandoci stdin e stdout
+        */
         return ;
       }else{
         printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
@@ -257,4 +245,19 @@ void command_request(char* buffer,int sock_desc,int id_shared_memory) {
       printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
     }
+}
+
+
+//Funzione che deve eseguire il thread di stdin
+void* mini_shell(void* arg){
+ printf("\nScrivi \"%s\" per aiuto\n",HELP);
+ //potrebbero non essere più necessari come parametri
+ command_request(LIST/*,sock,id_shared_memory*/);
+
+ while (parent_status) {
+   printf("Inserisci un comando: ");
+   fgets(command,sizeof(command),stdin);
+   printf("\n");
+   command_request(command/*,sock,id_shared_memory*/);
+ }
 }
