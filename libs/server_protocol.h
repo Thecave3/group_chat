@@ -40,6 +40,13 @@ int server_status(int sock_desc, int status);
 // -1 in caso di errore
 int server_disconnect(int sock_desc);
 
+//Invia una richiesta di connessione al client identificato con l'id client_id
+//Deve essere una chiamata bloccante, ovvero il flusso di esecuzione del codice deve bloccarsi finchè non si ha risposta
+//Ritorna 1 in caso di successo (e parte la chat), 0 in caso di connessione rifiutata da parte dell'altro client,
+// 2 in caso di client non trovato, -1 in caso di errore generico
+int connect_to(int sock_desc,int client_id);
+
+
 /*
   Utilizzo queste funzioni per far comunicare fra loro i messaggio dei due client
   Se uno dei due client vuole chiudere la conversazione, invierà nella chat tramite send_message la stringa "quit"

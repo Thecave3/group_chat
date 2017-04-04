@@ -23,19 +23,6 @@ int main(int argc, char *argv[]) {
   }
 
 
-  /* Armare il signale -- POTREBBE ESSERE DEPRECATA
-
-  struct sigaction usr_action;
-  sigset_t block_mask;
-
-  sigfillset (&block_mask);
-  usr_action.sa_handler = tactical_change;
-  usr_action.sa_mask = block_mask;
-  usr_action.sa_flags = 0;
-  ret = sigaction (SIGUSR1, &usr_action, NULL);
-  ERROR_HELPER(ret,"Errore armamento segnale SIGUSR1: ");
-  */
-
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
 
@@ -43,11 +30,6 @@ int main(int argc, char *argv[]) {
   sock = server_connect(name); //devo aspettare che giorgio la cambi
   ERROR_HELPER(sock,"Errore connssione al server: ");
 
-  /*0660 utente del gruppo e proprietari hanno facoltà di modificarla e leggerla, gli altri no
-  id_shared_memory = shmget(IPC_PRIVATE,CLIENT_SIZE*MAX_CLIENTS,IPC_CREAT|IPC_EXCL|0660);
-  ERROR_HELPER(id_shared_memory,"Errore creazione shared memory: ");
-  Forse deprecata.
-  */
 
   /*Creo due thread diversi per gestire stdin e stdout e le operazioni di send e receive dal server*/
   ret = pthread_create(&t_input,NULL,mini_shell,NULL);

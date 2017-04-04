@@ -38,37 +38,12 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
-int parent_status = 1; // forse DEPRECATA
-
-
-
-/*gestore del segnale SIGUSR1 POTREBBE ESSERE DEPRECATA
-void tactical_change() {
-  if(parent_status)
-    parent_status = 0;
-  else
-    parent_status = 1;
-}
-*/
 
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
 }
 
 
-int connect_to(char* server,int port){
-  int ret;
-  int sock = socket(AF_INET,SOCK_STREAM,0);
-  struct sockaddr_in server_addr = {0};
-  ERROR_HELPER(sock,"Errore creazione socket: ");
-  server_addr.sin_addr.s_addr = inet_addr(server);
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(port);
-  ret = connect(sock,(struct sockaddr*) &server_addr,sizeof(struct sockaddr_in));
-  ERROR_HELPER(ret,"Errore connessione: ");
-  printf("Connessione riuscita\n");
-  return sock;
-}
 
 void display_commands() {
   printf("-----------------LISTA COMANDI---------------\n\n");
@@ -84,69 +59,15 @@ void display_commands() {
   printf(" : Mostra questa lista\n\n");
 }
 
-//Verifica che l'utente user sia all'interno della shared memory,
-//se lo è allora lascia solo quell'utente in shared memory altrimenti l'area non viene toccata
-//ritorna 1 in caso vi sia, 0 in caso di utente non trovato
-/*int onList(char* user,int id_shared_memory){
-  //lettura memoria condivisa
-  char* c;
-  c = shmat(id_shared_memory, 0 , SHM_R);
-  if ( c == (char*) -1 )
-    ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
-  char* candidate;
-  for(int i = 0;c!=NULL;i++){
-    if(c[i]==user[0]){
-      candidate = (char*)malloc(strlen(user)*sizeof(char));
-      for(int j=0;j<strlen(user);j++){
-        if((i+j)>=strlen(c))
-          return 0;
-        candidate[j]=c[i+j];
-      }
-      if(strcmp(candidate,user) == 0){
-        free(candidate);
-        return 1;
-      }
-      free(candidate);
-    }
-  }
-  return 0;
+
+//Gestisce l'input della chat chat
+void end_end_chat(int sock_desc){
+
+  return;
+
 }
-*/
 
-//apre e cerca all'interno della memoria condivisa il nome, l'IP address e la porta e instaura una connessione verso di esso
-//restituisce il descrittore della connessione
-int end_end_chat(int id_shared_memory){
-  int ret;
-  char* c;
-  char* cour;
-  char end_addr[MAX_IP_LEN];
-  char end_name[MAX_LEN_NAME];
-  char end_port[MAX_PORT_LEN];
-  int socket;
-  c = shmat(id_shared_memory, 0 , SHM_R);
-  if ( c == (char*) -1 )
-    ERROR_HELPER(-1,"Errore lettura memoria condivisa: ");
-  //printf("Contenuto shared memory:\n");
-  //printf("%s\n",c);
-  cour = strtok(c,"\n");
-  strcpy(end_addr,c);
-  cour = strtok(NULL,"\n");
-  strcpy(end_port,cour);
-  cour = strtok(NULL,"\n");
-  strcpy(end_name,cour);
-
-
-  printf("Provo a connermi a %s all'indirizzo %s:%s\n",end_name,end_addr,end_port);
-
-  socket = connect_to(end_addr,atoi(end_name));
-  ERROR_HELPER(socket,"Errore connessione verso utente :");
-  ret = shmdt(c);
-  ERROR_HELPER(ret,"Errore scollegamento END2END: ");
-
-  return socket;
- }
-
-void command_request(char* buffer/*,int sock_desc,int id_shared_memory*/) {
+void command_request(char* buffer,int sock_desc,) {
   char* user;
   char list[MAX_LEN_LIST];
   int ret;
@@ -166,14 +87,6 @@ void command_request(char* buffer/*,int sock_desc,int id_shared_memory*/) {
       ERROR_HELPER(ret,"Errore download lista: ");
       printf("%s\n",list);
 
-      char* p;
-      p = shmat(id_shared_memory,0,SHM_W);
-      if(p == (char*) -1)
-        ERROR_HELPER(-1,"Errore agganciamento scrittura memoria condivisa: ");
-      strncpy(p,list,strlen(list));
-      ret = shmdt(p);
-      ERROR_HELPER(ret,"Errore scollegamento LIST: ");
-
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
       server_disconnect(sock_desc);
@@ -185,7 +98,7 @@ void command_request(char* buffer/*,int sock_desc,int id_shared_memory*/) {
       clear_screen();
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
-      //printf("Hai scritto il comando connect verso %s",user);
+      printf("Hai scritto il comando connect verso %s",user);
       if(onList(user,id_shared_memory)){
         //utente trovato, qui la shared memory deve essere ripulita ed all'interno devono rimanere
         // nome utente, indirizzo IP e porta
@@ -209,32 +122,20 @@ void command_request(char* buffer/*,int sock_desc,int id_shared_memory*/) {
             break;
           courier= strtok(NULL,"\n");
         }
-        //just 4 debug
-        /*printf("Lancio una connessione verso:\n");
-        printf("Nome: %s",target_user);
-        printf("Porta: %s\n",port);
-        printf("Indirizzo IP: ");
-        printf("%s\n",ip );*/
 
-        /*Forse deprecato
-        ret = shmdt(pt);
-        ERROR_HELPER(ret,"Errore scollegamento lettura CONNECT :");
-        char* writer;
-        writer = shmat(id_shared_memory,0,SHM_W);
-        if(writer == (char*) -1)
-          ERROR_HELPER(-1,"Errore agganciamento scrittura CONNECT : ");
-        strncpy(writer,ip,strlen(list));
-        strcat(writer,"\n");
-        strncat(writer,port,strlen(port));
-        strcat(writer,"\n");
-        strncat(writer,target_user,strlen(target_user));
-        ret = shmdt(writer);
-        ERROR_HELPER(ret,"Errore scollegamento scrittura CONNECT: ");
-        //invio segnale al processo forse deprecato
-        kill(getppid(),SIGUSR1);
-
-        */
-        return ;
+        ret = connect_to(sock_desc,client_id);
+        switch (ret) {
+          case 2: //client non trovato
+                break;
+          case 1: // client trovato e accetta
+                return end_end_chat(sock_desc);
+          case 0:
+                //conessione rifiutata
+                break;
+          default:// errore generico
+                  break;
+        }
+        return;
       }else{
         printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
         printf("%s\n",KNRM);
@@ -250,13 +151,12 @@ void command_request(char* buffer/*,int sock_desc,int id_shared_memory*/) {
 //Funzione che deve eseguire il thread di stdin
 void* mini_shell(void* arg){
  printf("\nScrivi \"%s\" per aiuto\n",HELP);
- //potrebbero non essere più necessari come parametri
- command_request(LIST/*,sock,id_shared_memory*/);
+ command_request(LIST,sock_desc);
 
  while (parent_status) {
    printf("Inserisci un comando: ");
    fgets(command,sizeof(command),stdin);
    printf("\n");
-   command_request(command/*,sock,id_shared_memory*/);
+   command_request(command,sock);
  }
 }
