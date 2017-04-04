@@ -5,7 +5,7 @@ S_COMMON = libs/server_protocol.c libs/server_utils.c libs/logger.c server/serve
 C_COMMON = libs/server_protocol.c
 CMN = libs/common.h
 
-all: clean cartella server_linux linux_client test_linux_client #windows
+all: clean cartella server_linux linux_client #test_linux_client
 
 clean:
 	rm -rf build
@@ -17,3 +17,5 @@ linux_client:
 	$(CC) $(OPT) $(C_COMMON) client/linux_client.c -o build/linux_client $(LDFLAGS)
 test_linux_client:
 	$(CC) $(OPT) $(S_COMMON) client/test_linux_client.c -o build/test_linux_client $(LDFLAGS)
+test_field:
+	$(CC) $(OPT) $(C_COMMON) client/test_field.c -o build/test_field $(LDFLAGS)

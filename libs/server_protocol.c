@@ -1,6 +1,6 @@
 #include "server_protocol.h"
 
-int server_connect(char* name, char* port) {
+int server_connect(char* name/*, char* port*/) {
   int   ret;
   int   bytes_send = 0;
   char  data_buffer[PACKET_LEN];
@@ -10,9 +10,9 @@ int server_connect(char* name, char* port) {
   if (sock_desc <= 0) {
     return -1;
   }
-  memcpy (data_buffer	  ,port	, 4);
-  memcpy (data_buffer+4	,name , 12);
-  //fprintf(stderr, "%s\n", data_buffer); //compariva sul client, la ho disabilitata
+  //memcpy (data_buffer	  ,port	, 4);
+  memcpy (data_buffer/*+4*/	,name , 12);
+  //fprintf(stderr, "%s\n", data_buffer);
   sock_addr->sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
   sock_addr->sin_family = AF_INET;
   sock_addr->sin_port = htons(SERVER_PORT);
@@ -154,4 +154,10 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
     bytes_send += ret;
   }
   return bytes_send;
+}
+
+
+int connect_to(int sock_desc,int client_id){
+
+  return 0;
 }

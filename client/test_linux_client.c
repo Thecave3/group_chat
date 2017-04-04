@@ -1,4 +1,9 @@
-/* Client esempio di comunicazione con il server */
+/* Client esempio di comunicazione con il server
+
+
+DEPRECATO
+
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>

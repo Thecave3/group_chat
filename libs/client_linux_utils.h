@@ -38,6 +38,12 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
+void * status; //stato terminazione threads
+
+
+typedef struct{
+  int sock_desc;
+} input_struct;
 
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
@@ -67,7 +73,7 @@ void end_end_chat(int sock_desc){
 
 }
 
-void command_request(char* buffer,int sock_desc,) {
+void command_request(char* buffer,int sock_desc) {
   char* user;
   char list[MAX_LEN_LIST];
   int ret;
@@ -86,61 +92,33 @@ void command_request(char* buffer,int sock_desc,) {
       ret = download_list(sock_desc,list, sizeof(list));
       ERROR_HELPER(ret,"Errore download lista: ");
       printf("%s\n",list);
-
+      // la lista deve essere salvata da qualche parte
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
       server_disconnect(sock_desc);
-      kill(getppid(),SIGINT);
-      ret = shmctl(id_shared_memory,IPC_RMID,NULL);
-      ERROR_HELPER(ret,"Errore cancellazione memoria condivisa: ");
-      exit(EXIT_SUCCESS);
+      /* Armare precedentemente un segnale che chiuda l'altro thread una volta che viene premuto quit
+      pthread_exit(&status);*/
     }else if (strncmp(buffer,CLEAR,strlen(CLEAR))==0) {
       clear_screen();
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
       printf("Hai scritto il comando connect verso %s",user);
-      if(onList(user,id_shared_memory)){
-        //utente trovato, qui la shared memory deve essere ripulita ed all'interno devono rimanere
-        // nome utente, indirizzo IP e porta
-        char* pt = shmat(id_shared_memory,0,SHM_R);
-        if ( pt == (char*) -1 )
-          ERROR_HELPER(-1,"Errore accesso shared memory: ");
-        char* courier;
-        char target_user[MAX_LEN_NAME];
-        char port[MAX_PORT_LEN];
-        char ip[MAX_IP_LEN];
-
-        courier = strtok(pt,"\n");
-        while (courier!= NULL) {
-          strcpy(ip,courier);
-          courier = strtok(NULL,"\n");
-          strcpy(port,courier);
-          courier=strtok(NULL,"\n");
-          strcpy(target_user,courier);
-          strcat(target_user,"\n");
-          if(strcmp(target_user,user)==0)
-            break;
-          courier= strtok(NULL,"\n");
-        }
-
+      int client_id = 221; // solo per debug
         ret = connect_to(sock_desc,client_id);
         switch (ret) {
-          case 2: //client non trovato
-                break;
-          case 1: // client trovato e accetta
+          case 2:
+                printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
+                printf("%s\n",KNRM);
+                return;
+          case 1: // client trovato e accetta, deve partire la chat end_end_chat
                 return end_end_chat(sock_desc);
           case 0:
-                //conessione rifiutata
-                break;
+                printf("%sErrore, L'utente ha rifiutato la richiesta di connessione!\n",KRED);
+                printf("%s\n",KNRM);
+                return;
           default:// errore generico
-                  break;
+                  return;
         }
-        return;
-      }else{
-        printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
-        printf("%s\n",KNRM);
-        return;
-      }
     }else{
       printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
@@ -149,14 +127,23 @@ void command_request(char* buffer,int sock_desc,) {
 
 
 //Funzione che deve eseguire il thread di stdin
-void* mini_shell(void* arg){
- printf("\nScrivi \"%s\" per aiuto\n",HELP);
- command_request(LIST,sock_desc);
+void* mini_shell(void* struttura){
+  char command[BUF_LEN];
+  input_struct* params = (input_struct*) struttura;
+  int sock_desc = params->sock_desc ;
 
- while (parent_status) {
-   printf("Inserisci un comando: ");
-   fgets(command,sizeof(command),stdin);
-   printf("\n");
-   command_request(command,sock);
- }
+  printf("\nScrivi \"%s\" per aiuto\n",HELP);
+  command_request(LIST,sock_desc);
+
+  while (1/*da cambiare*/) {
+    printf("Inserisci un comando: ");
+    fgets(command,sizeof(command),stdin);
+    printf("\n");
+    command_request(command,sock_desc);
+  }
+}
+
+void* server_output(void* args/* arguments */) {
+  /* code to implement */
+  pthread_exit(&status);
 }

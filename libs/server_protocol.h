@@ -28,7 +28,7 @@
 
 // Effettua una connessione TCP con il server e ritorna il descrittore
 // o -1 in caso di errore
-int server_connect(char* name, char* port);
+int server_connect(char* name);
 // Scarica la lista dei client connessi in stato ONLINE la salva in un
 // buffer di dimensione buff_len e ritorna il numero di bytes letti o
 // -1 in caso di errore
