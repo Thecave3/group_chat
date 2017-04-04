@@ -49,12 +49,11 @@ void tactical_change() {
   else
     parent_status = 1;
 }
-
+*/
 
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
 }
-*/
 
 
 int connect_to(char* server,int port){
@@ -88,7 +87,7 @@ void display_commands() {
 //Verifica che l'utente user sia all'interno della shared memory,
 //se lo è allora lascia solo quell'utente in shared memory altrimenti l'area non viene toccata
 //ritorna 1 in caso vi sia, 0 in caso di utente non trovato
-int onList(char* user,int id_shared_memory){
+/*int onList(char* user,int id_shared_memory){
   //lettura memoria condivisa
   char* c;
   c = shmat(id_shared_memory, 0 , SHM_R);
@@ -112,7 +111,7 @@ int onList(char* user,int id_shared_memory){
   }
   return 0;
 }
-
+*/
 
 //apre e cerca all'interno della memoria condivisa il nome, l'IP address e la porta e instaura una connessione verso di esso
 //restituisce il descrittore della connessione
@@ -147,7 +146,7 @@ int end_end_chat(int id_shared_memory){
   return socket;
  }
 
-void command_request(char* buffer,int sock_desc,int id_shared_memory) {
+void command_request(char* buffer/*,int sock_desc,int id_shared_memory*/) {
   char* user;
   char list[MAX_LEN_LIST];
   int ret;

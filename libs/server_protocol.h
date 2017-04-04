@@ -41,14 +41,20 @@ int server_status(int sock_desc, int status);
 int server_disconnect(int sock_desc);
 
 /*
+  Utilizzo queste funzioni per far comunicare fra loro i messaggio dei due client
+  Se uno dei due client vuole chiudere la conversazione, invierà nella chat tramite send_message la stringa "quit"
+  In caso di CTRL-C o di altri segnali il client proverà lo stesso a inviare la stringa quit prima di chiudersi.
+  L'unico caso non gestibile di invio al server è l'assenza di connessione.
+*/
+
+int recv_message(int socket_desc, char* buffer,  int buffer_len);
+int send_message(int socket_desc, char* buffer, int buffer_len);
+
+/*
  * Tutte le funzioni rimandano la gestione dell'errore al livello superiore,
  * per le funzioni server_connect(), download_list() e server_disconnect()
  * è possibile verificare la causa di errore tramite errno tramite metodo
  * standard.
 */
-
-// Interfacce semplificate per send e recv bit a bit (deprecate)
-int recv_message(int socket_desc, char* buffer,  int buffer_len);
-int send_message(int socket_desc, char* buffer, int buffer_len);
 
 #endif
