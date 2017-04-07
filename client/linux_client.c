@@ -8,6 +8,7 @@ int main(int argc, char *argv[]) {
   //separati solo per debug
   //int id_shared_memory,pid,listener;
   input_struct * in_params;
+  output_struct * out_params;
 
   char name[MAX_LEN_NAME];
   //char output[BUF_LEN];
@@ -38,11 +39,14 @@ int main(int argc, char *argv[]) {
    in_params = malloc(sizeof(input_struct));
    in_params->sock_desc = sock_desc;
 
+   out_params = malloc(sizeof(output_struct));
+   out_params->sock_desc = sock_desc;
+
   /*Creo due thread diversi per gestire stdin e stdout e le operazioni di send e receive dal server*/
   ret = pthread_create(&t_input,NULL,mini_shell,in_params);
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_input: ");
 
-  ret = pthread_create(&t_output,NULL,server_output,NULL);
+  ret = pthread_create(&t_output,NULL,server_output,out_params);
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
 
 

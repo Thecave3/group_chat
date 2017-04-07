@@ -38,12 +38,19 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
-void * status; //stato terminazione threads
+//status threads
+void * status;
 
 
 typedef struct{
   int sock_desc;
-} input_struct;
+  } input_struct;
+
+
+typedef struct{
+    int sock_desc;
+  } output_struct;
+
 
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
@@ -126,7 +133,7 @@ void command_request(char* buffer,int sock_desc) {
 }
 
 
-//Funzione che deve eseguire il thread di stdin
+//Funzione eseguita dal thread di input
 void* mini_shell(void* struttura){
   char command[BUF_LEN];
   input_struct* params = (input_struct*) struttura;
@@ -143,7 +150,16 @@ void* mini_shell(void* struttura){
   }
 }
 
-void* server_output(void* args/* arguments */) {
-  /* code to implement */
+//Funzione eseguita dal thread di output
+void* server_output(void* struttura) {
+  char output_buf[BUF_LEN];
+  output_struct* params = (output_struct*) struttura;
+  int sock_desc = params->sock_desc;
+  int ret;
+
+  while (1/*cambiare*/) {
+    ret = recv_message(sock_desc,output_buf,BUF_LEN);
+    ERROR_HELPER(ret,"Errore recv_message output_thread: ");
+  }
   pthread_exit(&status);
 }
