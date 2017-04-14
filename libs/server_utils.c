@@ -2,28 +2,8 @@
 
 int				id_clients;
 
-void 	client_list_wait() {
-	if (sem_wait(&client_list_semaphore)) {
-		if (DEBUG) perror("client_list_semaphore: error in wait");
-		fprintf(stderr, "Impossibile registrare il client");
-		return;
-	}
-}
-
-void 	client_list_post() {
-	if (sem_post(&client_list_semaphore)) {
-		if (DEBUG) perror("client_list_semaphore: error in wait");
-		fprintf(stderr, "Impossibile registrare il client");
-		return;
-	}
-}
-
 int		add_cl(client_l client) {
-	if (sem_wait(&client_list_semaphore)) {
-		if (DEBUG) perror("client_list_semaphore: error in wait");
-		fprintf(stderr, "Impossibile registrare il client");
-		return 0;
-	}
+	if (sem_wait(&client_list_semaphore)) return 0;
 	client->client_id = id_clients;
 	if (nclients == 0) {
 		client_list = client;
@@ -36,28 +16,13 @@ int		add_cl(client_l client) {
 	}
 	nclients++;
 	id_clients++;
-	if (sem_post(&client_list_semaphore)) {
-		if (DEBUG) perror("client_list_semaphore: error in post");
-		fprintf(stderr, "Impossibile registrare il client");
-		return 0;
-	}
+	if (sem_post(&client_list_semaphore))return 0;
 	return 1;
 }
 
 int 	remove_cl(int id) {
-	if (sem_wait(&client_list_semaphore)) {
-		if (DEBUG) perror("client_list_semaphore: error in wait");
-		fprintf(stderr, "Impossibile registrare il client");
-		return -1;
-	}
+	if (sem_wait(&client_list_semaphore)) return -1;
 	client_l aux, bux;
-	if (client_list == NULL) {
-		if (sem_post(&client_list_semaphore)) {
-			if (DEBUG) perror("client_list_semaphore: error in post");
-			fprintf(stderr, "Impossibile registrare il client");
-			return -1;
-		}
-	}
 	aux = client_list;
 	while (aux != NULL) {
 		if (aux->client_id == id) {
@@ -86,49 +51,8 @@ int 	remove_cl(int id) {
 		aux = aux->next;
 	}
 	nclients--;
-	if (sem_post(&client_list_semaphore)) {
-		if (DEBUG) perror("client_list_semaphore: error in post");
-		fprintf(stderr, "Impossibile registrare il client");
-		return -1;
-	}
+	if (sem_post(&client_list_semaphore)) return -1;
 	return 0;
-}
-
-int		server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
-	nclients = 0;
-	client_list = NULL;
-	last_client = NULL;
-
-	if (sem_init(&client_list_semaphore, 0, 1)) {
-		if (DEBUG) {
-			fprintf(stderr, "client_list_semaphore: error in sem_init;\n");
-			fprintf(stderr, "\tmain\n");
-		}
-		return 0;
-	}
-
-	// Inizializzazione porta socket
-	*sock_desc = socket(AF_INET , SOCK_STREAM , 0);
-	if (*sock_desc == -1) {
-		if (DEBUG) perror("sock_desc: error in socket");
-		fprintf(stderr, "Impossibile avviare la connessione\n");
-		exit(EXIT_FAILURE);
-	}
-	sock_addr->sin_family = AF_INET;
-	sock_addr->sin_addr.s_addr = INADDR_ANY;
-	sock_addr->sin_port = htons(SERVER_PORT);
-	if(bind(*sock_desc,(struct sockaddr *)sock_addr , sizeof(*sock_addr)) < 0)
-	{
-		if (DEBUG) perror("sock_desc: error in bind");
-		fprintf(stderr, "Impossibile avviare la connessione\n");
-		return -1;
-	}
-	if(listen(*sock_desc , MAX_CONN_QUEUE)) {
-		if (DEBUG) perror("sock_desc: error in listen");
-		fprintf(stderr, "Impossibile avviare la connessione\n");
-		return -1;
-	}
-	return 1;
 }
 
 int 	send_cl(int sock_desc) {
@@ -155,10 +79,7 @@ int 	send_cl(int sock_desc) {
 			while (bytes_send < data_buffer_len) {
 				ret = send(sock_desc, data_buffer + bytes_send, data_buffer_len - bytes_send, 0);
 				if (ret == -1 && errno == EINTR) continue;
-				if (ret == -1) {
-					if (DEBUG) perror("send_cl: error in send");
-					return -1;
-				}
+				if (ret == -1) return -1;
 				bytes_send += ret;
 			}
 			list_len += bytes_send;
@@ -171,7 +92,7 @@ int 	send_cl(int sock_desc) {
 		ret = send(sock_desc, "\0", 1, 0);
 		if (ret == -1 && errno == EINTR) continue;
 		if (ret == -1) {
-			if (DEBUG) perror("send_cl: error in send");
+			perror("send_cl: error in send");
 			return -1;
 		}
 	}

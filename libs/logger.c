@@ -1,3 +1,4 @@
+/* DEPRECATED */
 #include "logger.h"
 
 logger_t* new_log     (const char* path, int flags, mode_t mode) {
