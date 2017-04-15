@@ -19,7 +19,7 @@
 // Lunghezza dei dati da inviare al server
 #define PACKET_LEN      16
 // Lunghezza massima del nome del client
-#define MAX_LEN_NAME    12
+#define MAX_LEN_NAME    10
 
 // Stati del client
 #define OFFLINE   0

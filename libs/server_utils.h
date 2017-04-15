@@ -15,26 +15,23 @@
 #define ONLINE 	1
 
 typedef struct client_s {
-	int			client_id;
-	int			client_desc;
-	int 		client_status;
-	char		client_ip[16];
-	char		client_port[5];
-	char		client_name[13];
-	struct 	client_s* next;
-	struct 	client_s* prev;
+  int     client_id;
+  int     client_desc;
+  int     client_status;
+  char    client_port[5];
+  char    client_name[11];
+  struct  client_s* next;
+  struct  client_s* prev;
 } client_t;
 typedef client_t* client_l;
 
-int				nclients;
-sem_t 		client_list_semaphore;
-client_l 	client_list;
-client_l 	last_client;
+int       nclients;
+sem_t     client_list_semaphore;
+client_l  client_list;
+client_l  last_client;
 
-void 	client_list_wait();
-void 	client_list_post();
-int 	add_cl(client_l client);
-int 	remove_cl(int id);
-int 	send_cl(int sock_desc);
+int add_cl (client_l client);
+int remove_cl (int id);
+int send_cl (int sock_desc);
 
 #endif

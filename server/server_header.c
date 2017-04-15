@@ -1,7 +1,7 @@
 #include "server_header.h"
 
 /* Routine principale del server */
-int 	server_routine(int argc, char const *argv[]) {
+int server_routine(int argc, char const *argv[]) {
   int                 server_desc ,                                              // Descrittore del server
                       client_desc,                                               // Descrittore del client
                       client_addr_len,                                           // Lunghezza della struttura sockaddr_in del client
@@ -50,65 +50,62 @@ int 	server_routine(int argc, char const *argv[]) {
 
 /* Routine di gestione dei client */
 void*	client_routine(void *arg) {
-	client_l 	client = (client_l) arg;
+  client_l  client = (client_l) arg;
 
-	int*			status = &client->client_status;
-	int 			ret;
-	int 			client_desc = client->client_desc;
-	int   		bytes_read = 0;
-	int   		query_ret;
-	int  		 	query_recv;
-	int*			client_id = &client->client_id;
-	char*			client_name = client->client_name;
-	char*			client_port = client->client_port;
-	char			query[5];
-	char 			data[PACKET_LEN];
+  int*      status = &client->client_status;
+  int       ret;
+  int       client_desc = client->client_desc;
+  int       bytes_read = 0;
+  int       query_ret;
+  int       query_recv;
+  int*      client_id = &client->client_id;
+  char*     client_name = client->client_name;
+  char      query[5];
+  char      data[PACKET_LEN];
 
-  while(bytes_read < PACKET_LEN) {
+  while (bytes_read < PACKET_LEN) {
     ret = recv(client_desc, data + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) pthread_exit(NULL);
     if (ret == 0) pthread_exit(NULL);
-		bytes_read++;
+    bytes_read++;
   }
 
-	memcpy (client_port	,data	 , 4);
-	memcpy (client_name	,data+4, 12);
+  memcpy(client_name ,data , 11);
+  add_cl(client);
 
-	*status = ONLINE;
-
-	add_cl(client);
-	while (1) {
-		query_recv = 0;
-		memset(query, 0, QUERY_LEN);
-	  while(1) {
-	    query_ret = recv(client_desc, query + query_recv, 1, 0);
-	    if (query_ret == -1 && errno == EINTR) continue;
-	    if (query_ret == -1) pthread_exit(NULL);
-	    if (query_ret == 0) pthread_exit(NULL);
-	    query_recv++;
-	    if (query[query_recv-1] == '\n' ||
-					query[query_recv-1] ==  '\0' ||
-					query_recv == QUERY_LEN)
-				break;
-	  }
-	  query[query_recv-1] = '\0';
-		if (strcmp(query, "QUIT\0") == 0) {
-			remove_cl(*client_id);
-			break;
-		}
-		if (strcmp(query, "STOF\0") == 0 && *status != OFFLINE) *status = OFFLINE;
-		if (strcmp(query, "STON\0") == 0 && *status != ONLINE) *status = ONLINE;
-		if (strcmp(query, "LIST\0") == 0) send_cl(client_desc);
-		if (strcmp(query, "CONN\0") == 0) {
+  while (1) {
+    query_recv = 0;
+    memset(query, 0, QUERY_LEN);
+    while (1) {
+      query_ret = recv(client_desc, query + query_recv, 1, 0);
+      if (query_ret == -1 && errno == EINTR) continue;
+      if (query_ret == -1) pthread_exit(NULL);
+      if (query_ret == 0) pthread_exit(NULL);
+      query_recv++;
+      if (query[query_recv-1] == '\n' ||
+          query[query_recv-1] ==  '\0' ||
+          query_recv == QUERY_LEN)
+        break;
 
     }
-	}
-	pthread_exit(NULL);
+    query[query_recv-1] = '\0';
+    if (strcmp(query, "QUIT\0") == 0) {
+      remove_cl(*client_id);
+      break;
+    }
+    if (strcmp(query, "STOF\0") == 0 && *status != OFFLINE) *status = OFFLINE;
+    if (strcmp(query, "STON\0") == 0 && *status != ONLINE) *status = ONLINE;
+    if (strcmp(query, "LIST\0") == 0) send_cl(client_desc);
+    if (strcmp(query, "CONN\0") == 0) {
+
+    }
+  }
+  pthread_exit(NULL);
 }
 
 /* Routine di inizializzazione del server */
-int    server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
+int server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
   nclients = 0;                                                                   // Resetto nclients
   client_list = NULL;                                                             // Resetto client_list
   last_client = NULL;                                                             // Resetto last_client
@@ -120,7 +117,7 @@ int    server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
   sock_addr->sin_family = AF_INET;                                                // Popolo la struttura sock_addr
   sock_addr->sin_addr.s_addr = INADDR_ANY;
   sock_addr->sin_port = htons(SERVER_PORT);
-  if(bind(*sock_desc,                                                             // Effettuo la bind della socket e ritorno -1 in caso di errore
+  if (bind(*sock_desc,                                                            // Effettuo la bind della socket e ritorno -1 in caso di errore
           (struct sockaddr *)sock_addr ,
           sizeof(*sock_addr)) < 0)
     return -1;
@@ -129,7 +126,7 @@ int    server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
 }
 
 /* Funzione di terminazione del server */
-void    server_exit () {
+void server_exit () {
   sem_wait(&client_list_semaphore);                                              // Blocca il semaforo per la gestione della lista dei client
   client_l aux;                                                                  // Dichiaro una variabile di tipo client_l
   while (client_list != NULL) {                                                  // Fintanto che client_list è diverso da NULL quindi se c'é almeno un client connesso
