@@ -38,26 +38,12 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
-//status threads
-void * status;
-
-
-typedef struct{
-  int sock_desc;
-  } input_struct;
-
-
-typedef struct{
-    int sock_desc;
-  } output_struct;
-
-
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
 }
 
 
-
+//Mostra l'elenco completo dei comandi disponibile per l'utente
 void display_commands() {
   printf("-----------------LISTA COMANDI---------------\n\n");
   printf(">> %s",LIST);
@@ -73,93 +59,88 @@ void display_commands() {
 }
 
 
-//Gestisce l'input della chat chat
-void end_end_chat(int sock_desc){
+//Gestisce l'invio di messaggi
+//Valori di ritorno:
+// 0 in caso di uscita chat e ritorno applicazione
+// 1 in caso di chiusura totale programma
+int end_end_chat(int sock_desc){
 
-  return;
-
+  //todo
+  return 0;
 }
 
-void command_request(char* buffer,int sock_desc) {
+
+//gestisce la richiesta dei comandi
+//Valori di ritorno:
+// 0 in caso di uscita terminata programmata dal flusso di esecuzione
+// 1 in caso di chiusura
+int command_request(char* buffer,int sock_desc,char* list) {
   char* user;
-  char list[MAX_LEN_LIST];
   int ret;
   for(int i =0; i<MIN_CMD_LEN;i++){
     if(buffer[i]=='\0'){
       printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
-      return;
+      return 0;
       }
     }
 
     if (strncmp(buffer,HELP,strlen(HELP))==0) {
       display_commands();
+      return 0;
     }else if (strncmp(buffer,LIST,strlen(LIST))==0) {
       printf("Lista utenti connessi:\n");
       ret = download_list(sock_desc,list, sizeof(list));
       ERROR_HELPER(ret,"Errore download lista: ");
       printf("%s\n",list);
-      // la lista deve essere salvata da qualche parte
+      return 0;
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
       server_disconnect(sock_desc);
-      /* Armare precedentemente un segnale che chiuda l'altro thread una volta che viene premuto quit
-      pthread_exit(&status);*/
+      return 1;
     }else if (strncmp(buffer,CLEAR,strlen(CLEAR))==0) {
       clear_screen();
+      return 0;
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
       printf("Hai scritto il comando connect verso %s",user);
-      int client_id = 221; // solo per debug
+
+      //trovare il client_id all'interno di list
+
         ret = connect_to(sock_desc,client_id);
         switch (ret) {
           case 2:
                 printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
                 printf("%s\n",KNRM);
-                return;
+                return 0;
           case 1: // client trovato e accetta, deve partire la chat end_end_chat
                 return end_end_chat(sock_desc);
           case 0:
                 printf("%sErrore, L'utente ha rifiutato la richiesta di connessione!\n",KRED);
                 printf("%s\n",KNRM);
-                return;
+                return 0;
           default:// errore generico
-                  return;
+                  return 0;
         }
     }else{
       printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
       printf("%s\n",KNRM);
+      return 0;
     }
 }
 
 
-//Funzione eseguita dal thread di input
-void* mini_shell(void* struttura){
+void mini_shell(int sock_desc,char* list){
+  int ret=0;
   char command[BUF_LEN];
-  input_struct* params = (input_struct*) struttura;
-  int sock_desc = params->sock_desc ;
 
   printf("\nScrivi \"%s\" per aiuto\n",HELP);
-  command_request(LIST,sock_desc);
+  command_request(LIST,sock_desc,list);
 
-  while (1/*da cambiare*/) {
+  while (ret==0){
     printf("Inserisci un comando: ");
     fgets(command,sizeof(command),stdin);
     printf("\n");
-    command_request(command,sock_desc);
+    ret = command_request(command,sock_desc,list);
   }
-}
-
-//Funzione eseguita dal thread di output
-void* server_output(void* struttura) {
-  char output_buf[BUF_LEN];
-  output_struct* params = (output_struct*) struttura;
-  int sock_desc = params->sock_desc;
-  int ret;
-
-  while (1/*cambiare*/) {
-    ret = recv_message(sock_desc,output_buf,BUF_LEN);
-    ERROR_HELPER(ret,"Errore recv_message output_thread: ");
-  }
-  pthread_exit(&status);
 }

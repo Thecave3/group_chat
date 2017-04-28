@@ -4,17 +4,12 @@
 
 
 int main(int argc, char *argv[]) {
-  int sock_desc,ret;
-  //separati solo per debug
-  //int id_shared_memory,pid,listener;
-  input_struct * in_params;
-  output_struct * out_params;
 
+  int sock_desc;
   char name[MAX_LEN_NAME];
-  //char output[BUF_LEN];
+  char list[MAX_LEN_LIST];
 
-  pthread_t t_input,t_output;
-
+  //Incipit e controlli sul nome
   if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
     strncpy(name,argv[1],strlen(argv[1]));
     strcat(name, "\n");
@@ -32,29 +27,13 @@ int main(int argc, char *argv[]) {
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
 
-
+  //connessione al server
   sock_desc = server_connect(name);
   ERROR_HELPER(sock_desc,"Errore connessione al server");
 
-   in_params = malloc(sizeof(input_struct));
-   in_params->sock_desc = sock_desc;
+  //lancio shell
+  mini_shell(sock_desc,list);
 
-   out_params = malloc(sizeof(output_struct));
-   out_params->sock_desc = sock_desc;
-
-  /*Creo due thread diversi per gestire stdin e stdout e le operazioni di send e receive dal server*/
-  ret = pthread_create(&t_input,NULL,mini_shell,in_params);
-  PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_input: ");
-
-  ret = pthread_create(&t_output,NULL,server_output,out_params);
-  PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
-
-
-
-  ret = pthread_join(t_output, &status);
-  PTHREAD_ERROR_HELPER(ret,"Errore join out: ");
-  ret = pthread_join(t_input, &status);
-  PTHREAD_ERROR_HELPER(ret,"Errore join in: ");
 
   printf("Bye Bye\n");
   return 0;

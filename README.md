@@ -17,7 +17,7 @@ Il servizio tiene traccia di un elenco di client pronti ad iniziare una
 "conversazione".
 
 I client (residenti, in generale, su macchine diverse), dopo essersi connessi
-al servizio acquisiscono l'elenco e lo mostrano all'utente il quale potra'
+al servizio acquisiscono l'elenco e lo mostrano all'utente il quale potrà
 collegarsi a un altro utente disponibile iniziando cosi' la conversazione.
 Due client collegati tra loro permetteranno ai relativi utenti di scambiarsi
 messaggi finche' uno dei due non interrompe la conversazione, e saranno
@@ -39,4 +39,4 @@ Build 0.1
 
 ## client_linux
 
-* Still coding
+* Interagisce con il server tramite API definite poggianti sulle API POSIX
