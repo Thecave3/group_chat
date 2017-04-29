@@ -39,4 +39,14 @@ Build 0.1
 
 ## client_linux
 
-* Interagisce con il server tramite API definite poggianti sulle API POSIX
+Architecture concept:
+* Client Monothread e shell utente che gestisce gli user-input con chiamate mappate sulle API del server
+* Interazione con il server tramite API poggianti su chiamate C-UNIX
+
+Chiamate disponibili per l'utente:
+
+* connect USER : inoltra una richiesta di chat verso l'utente identificato con il nome USER
+* list : esegue il download della lista aggiornata di utenti connessi al server
+* clear : pulisce lo schermo
+* quit : invia un segnale di disconnessione al server e chiude il client
+* help : invoca una stampa dei comandi disponibili
