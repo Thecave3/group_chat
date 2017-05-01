@@ -71,7 +71,9 @@ void* server_output(void* struttura) {
   int sock_desc = params->sock_desc;
   int ret;
 
-  //todo gestione output corretta (Capire come funzionan recv_messages)
+  printf("Chat iniziata, digitare \"quit\" per chiudere la connessione.");
+
+  //todo gestione output corretta (Capire come funzionan recv_message)
    while (1) {
      ret = recv_message(sock_desc,output_buf,BUF_LEN);
      ERROR_HELPER(ret,"Errore recv_message output_thread: ");
@@ -101,10 +103,14 @@ int end_end_chat(int sock_desc){
   ret = pthread_create(&t_output,NULL,server_output,out_params);
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
 
+  char input_buf[BUF_LEN];
 
-  //todo input
-
-
+  //todo gestione input corretta (Capire come funzionan send_message)
+  do{
+    scanf("%s\n",input_buf); //rendere sicuro
+    ret = send_message(sock_desc,input_buf,BUF_LEN);
+    ERROR_HELPER(ret,"Errore send_message: ");
+  }while(strncmp(input_buf,QUIT,strlen(QUIT))==0);
 
   ret = pthread_join(t_output, NULL);
   PTHREAD_ERROR_HELPER(ret,"Errore join uscita: ");
