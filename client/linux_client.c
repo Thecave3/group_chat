@@ -31,6 +31,8 @@ int main(int argc, char *argv[]) {
   sock_desc = server_connect(name);
   ERROR_HELPER(sock_desc,"Errore connessione al server");
 
+  printf("\nConnessione effettuata\n");
+
   //lancio shell
   mini_shell(sock_desc,list);
 

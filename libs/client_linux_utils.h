@@ -38,6 +38,12 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
+//Struttura per i parametri del thread di output
+typedef struct{
+  int sock_desc;
+  } output_struct;
+
+//Pulisce lo schermo
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM );
 }
@@ -59,13 +65,49 @@ void display_commands() {
 }
 
 
+void* server_output(void* struttura) {
+  char output_buf[BUF_LEN];
+  output_struct* params = (output_struct*) struttura;
+  int sock_desc = params->sock_desc;
+  int ret;
+
+  //todo gestione output corretta (Capire come funzionan recv_messages)
+   while (1) {
+     ret = recv_message(sock_desc,output_buf,BUF_LEN);
+     ERROR_HELPER(ret,"Errore recv_message output_thread: ");
+     printf("%s\n",output_buf);
+    }
+  }
+
+
+
+//Restituisce la lungheza dell'array list
+int length(char * list){
+  return sizeof(list)/sizeof(list[0]);
+}
+
 //Gestisce l'invio di messaggi
 //Valori di ritorno:
 // 0 in caso di uscita chat e ritorno applicazione
 // 1 in caso di chiusura totale programma
 int end_end_chat(int sock_desc){
+  int ret;
+  output_struct * out_params;
+  pthread_t t_output;
+  out_params = malloc(sizeof(output_struct));
+  out_params->sock_desc = sock_desc;
 
-  //todo
+  //creazione thread per gestire l'output
+  ret = pthread_create(&t_output,NULL,server_output,out_params);
+  PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
+
+
+  //todo input
+
+
+
+  ret = pthread_join(t_output, NULL);
+  PTHREAD_ERROR_HELPER(ret,"Errore join uscita: ");
   return 0;
 }
 
@@ -90,9 +132,9 @@ int command_request(char* buffer,int sock_desc,char* list) {
       return 0;
     }else if (strncmp(buffer,LIST,strlen(LIST))==0) {
       printf("Lista utenti connessi:\n");
+      printf("%s\n",list );
       ret = download_list(sock_desc,list, sizeof(list));
       ERROR_HELPER(ret,"Errore download lista: ");
-      printf("%s\n",list);
       return 0;
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
@@ -104,10 +146,25 @@ int command_request(char* buffer,int sock_desc,char* list) {
     }else if (strncmp(buffer,CONNECT,strlen(CONNECT))==0) {
       user = subString(buffer,strlen(CONNECT)+1);
       printf("Hai scritto il comando connect verso %s",user);
-
+      printf("Cerco utente .");
       //trovare il client_id all'interno di list
+      int client_id = -1;
+      for(int i = 0;i<length(list);i++){
+        printf(" . ");
+        if (strncmp(list+i,user,strlen(user))==0) {
+          printf("Utente trovato!\n");
+          client_id = list[i-2];
+          break;
+        }
+      }
 
-        ret = connect_to(sock_desc,client_id);
+      if (client_id == -1) {
+        printf("%sUtente non trovato!",KRED);
+        printf("%s\n",KNRM);
+        return 0;
+      }
+
+      ret = connect_to(sock_desc,client_id);
         switch (ret) {
           case 2:
                 printf("%sErrore, utente non trovato! Selezionare un utente in lista!\n",KRED);
