@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
   char name[MAX_LEN_NAME];
   char list[MAX_LEN_LIST];
 
-  //Incipit e controlli sul nome
+  //Incipit e controlli vari sul nome
   if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
     strncpy(name,argv[1],strlen(argv[1]));
     strcat(name, "\n");
@@ -27,13 +27,13 @@ int main(int argc, char *argv[]) {
   printf("Benvenuto %s", name);
   printf("Provo a connettermi al server...\n");
 
-  //connessione al server
+  //Connessione al server
   sock_desc = server_connect(name);
   ERROR_HELPER(sock_desc,"Errore connessione al server");
 
   printf("\nConnessione effettuata\n");
 
-  //lancio shell
+  //Lancio shell
   mini_shell(sock_desc,list);
 
 

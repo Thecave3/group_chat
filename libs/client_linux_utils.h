@@ -73,53 +73,56 @@ void* server_output(void* struttura) {
 
   printf("Chat iniziata, digitare \"quit\" per chiudere la connessione.");
 
-  //todo gestione output corretta (Capire come funzionan recv_message)
-   while (1) {
-     ret = recv_message(sock_desc,output_buf,BUF_LEN);
-     ERROR_HELPER(ret,"Errore recv_message output_thread: ");
-     printf("%s\n",output_buf);
+  while (1) {
+    ret = recv_message(sock_desc,output_buf,BUF_LEN);
+    ERROR_HELPER(ret,"Errore recv_message output_thread: ");
+    if (ret==0) {
+      printf("L'utente ha chiuso la chat.\n");
+      break;
     }
-  }
+    printf(">> %s\n",output_buf);
+    }
+
+  return NULL;
+}
 
 
 
-//Restituisce la lungheza dell'array list
+// Restituisce la lungheza dell'array list
 int length(char * list){
   return sizeof(list)/sizeof(list[0]);
 }
 
-//Gestisce l'invio di messaggi
-//Valori di ritorno:
+// Gestisce l'invio di messaggi tra due client via server
+// Valori di ritorno:
 // 0 in caso di uscita chat e ritorno applicazione
 // 1 in caso di chiusura totale programma
 int end_end_chat(int sock_desc){
   int ret;
   output_struct * out_params;
-  pthread_t t_output;
   out_params = malloc(sizeof(output_struct));
   out_params->sock_desc = sock_desc;
+  pthread_t t_output;
+  char input_buf[BUF_LEN];
 
-  //creazione thread per gestire l'output
+  // Creazione thread per gestire l'output
   ret = pthread_create(&t_output,NULL,server_output,out_params);
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
 
-  char input_buf[BUF_LEN];
-
-  //todo gestione input corretta (Capire come funzionan send_message)
   do{
-    scanf("%s\n",input_buf); //rendere sicuro
+    scanf("%1024s\n",input_buf);
     ret = send_message(sock_desc,input_buf,BUF_LEN);
     ERROR_HELPER(ret,"Errore send_message: ");
-  }while(strncmp(input_buf,QUIT,strlen(QUIT))==0);
+  }while(strncmp(input_buf,QUIT,strlen(QUIT))!=0);
 
   ret = pthread_join(t_output, NULL);
-  PTHREAD_ERROR_HELPER(ret,"Errore join uscita: ");
+  PTHREAD_ERROR_HELPER(ret,"Errore join con l'output thread: ");
   return 0;
 }
 
 
-//gestisce la richiesta dei comandi
-//Valori di ritorno:
+// Gestisce la richiesta dei comandi disponibili per l'utente
+// Valori di ritorno:
 // 0 in caso di uscita terminata programmata dal flusso di esecuzione
 // 1 in caso di chiusura
 int command_request(char* buffer,int sock_desc,char* list) {
@@ -139,8 +142,7 @@ int command_request(char* buffer,int sock_desc,char* list) {
     }else if (strncmp(buffer,LIST,strlen(LIST))==0) {
       ret = download_list(sock_desc,list, sizeof(list));
       ERROR_HELPER(ret,"Errore download lista: ");
-      printf("Lista utenti connessi:\n");
-      printf("%s\n",list );
+      printf("Lista utenti connessi:\n%s\n",list);
       return 0;
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){
       printf("Chiusura connessione in corso... Bye Bye\n");
