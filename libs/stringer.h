@@ -3,7 +3,9 @@
 #include <string.h>
 
 
-//estrae la sottostringa ad index
+//subString:
+//Data una stringa string e un indice index, estrae e ritorna la sottostringa che parte da string[index]
+//Ritorna "" in caso di errore;
 char* subString(char* string,int index){
   if (index>strlen(string))
     return "";

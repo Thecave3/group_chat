@@ -3,8 +3,8 @@ This repo contains the project for "Sistemi Operativi" - Sapienza Univ. of Rome 
 
 Officially we're coding only UNIX client, but maybe we'll create also the Windows client.
 
-Server side is by Giorgio Dramis.
-Client side is by Andrea Lacava.
+* Server side is by Giorgio Dramis.
+* Client side is by Andrea Lacava.
 
 
 Here is the official request done by our teacher:
