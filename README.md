@@ -9,7 +9,7 @@ Officially we're coding only UNIX client, but maybe we'll create also the Window
 
 Here is the official request done by our teacher:
 
-*Talk
+Talk
 
 Realizzazione di un servizio "talk" via internet gestito tramite server.
 
@@ -28,7 +28,7 @@ Si precisa che la specifica richiede la realizzazione del software sia per
 l'applicazione client che per l'applicazione server.
 
 Per progetti misti Unix/Windows e' a scelta quale delle due applicazioni
-sviluppare per uno dei due sistemi.*
+sviluppare per uno dei due sistemi.
 
 ## server_linux
 
