@@ -1,3 +1,6 @@
+#ifndef CLIENT_LINUX_H
+#define CLIENT_LINUX_H
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
@@ -45,7 +48,7 @@ typedef struct{
 
 //Pulisce lo schermo
 void clear_screen() {
-    printf("%s\e[1;1H\e[2J\n",KNRM );
+    printf("%s\e[1;1H\e[2J\n",KNRM);
 }
 
 
@@ -88,10 +91,6 @@ void* server_output(void* struttura) {
 
 
 
-// Restituisce la lungheza dell'array list
-int length(char * list){
-  return sizeof(list)/sizeof(list[0]);
-}
 
 // Gestisce l'invio di messaggi tra due client via server
 // Valori di ritorno:
@@ -110,7 +109,7 @@ int end_end_chat(int sock_desc){
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
 
   do{
-    scanf("%1024s\n",input_buf);
+    fgets(input_buf,sizeof(input_buf),stdin);
     ret = send_message(sock_desc,input_buf,BUF_LEN);
     ERROR_HELPER(ret,"Errore send_message: ");
   }while(strncmp(input_buf,QUIT,strlen(QUIT))!=0);
@@ -157,7 +156,7 @@ int command_request(char* buffer,int sock_desc,char* list) {
       printf("Cerco utente .");
       //trovare il client_id all'interno di list
       int client_id = -1;
-      for(int i = 0;i<length(list);i++){
+      for(int i = 0;i< sizeof(list)/sizeof(list[0]);i++){
         printf(" . ");
         if (strncmp(list+i,user,strlen(user))==0) {
           printf("Utente trovato!\n");
@@ -209,3 +208,4 @@ void mini_shell(int sock_desc,char* list){
     ret = command_request(command,sock_desc,list);
   }
 }
+#endif
