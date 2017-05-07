@@ -74,8 +74,6 @@ void* server_output(void* struttura) {
   int sock_desc = params->sock_desc;
   int ret;
 
-  printf("Chat iniziata, digitare \"quit\" per chiudere la connessione.");
-
   while (1) {
     ret = recv_message(sock_desc,output_buf,BUF_LEN);
     ERROR_HELPER(ret,"Errore recv_message output_thread: ");
@@ -91,22 +89,15 @@ void* server_output(void* struttura) {
 
 
 
-
 // Gestisce l'invio di messaggi tra due client via server
 // Valori di ritorno:
 // 0 in caso di uscita chat e ritorno applicazione
 // 1 in caso di chiusura totale programma
 int end_end_chat(int sock_desc){
   int ret;
-  output_struct * out_params;
-  out_params = malloc(sizeof(output_struct));
-  out_params->sock_desc = sock_desc;
-  pthread_t t_output;
   char input_buf[BUF_LEN];
 
-  // Creazione thread per gestire l'output
-  ret = pthread_create(&t_output,NULL,server_output,out_params);
-  PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
+  printf("Chat iniziata, digitare \"quit\" per chiudere la connessione.");
 
   do{
     fgets(input_buf,sizeof(input_buf),stdin);

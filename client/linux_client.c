@@ -5,6 +5,9 @@
 
 int main(int argc, char *argv[]) {
 
+  pthread_t t_output;
+  output_struct * out_params;
+  out_params = malloc(sizeof(output_struct));
   int sock_desc;
   char name[MAX_LEN_NAME];
   char list[MAX_LEN_LIST];
@@ -32,6 +35,11 @@ int main(int argc, char *argv[]) {
   ERROR_HELPER(sock_desc,"Errore connessione al server");
 
   printf("\nConnessione effettuata\n");
+  out_params->sock_desc = sock_desc;
+
+  // Creazione thread per gestire l'output
+  ret = pthread_create(&t_output,NULL,server_output,out_params);
+  PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
 
   //Lancio shell
   mini_shell(sock_desc,list);

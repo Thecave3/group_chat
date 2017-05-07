@@ -1,6 +1,6 @@
 #include "server_protocol.h"
 
-int server_connect(char* name/*, char* port*/) {
+int server_connect(char* name) {
   int   ret;
   int   bytes_send = 0;
   char  data_buffer[PACKET_LEN];
@@ -80,7 +80,7 @@ int download_list(int sock_desc, char* buffer, size_t buff_len) {
     query_send ++;
   }
 
-  while(1) {
+/*  while(1) {
     ret = recv(sock_desc, buffer + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
@@ -94,7 +94,8 @@ int download_list(int sock_desc, char* buffer, size_t buff_len) {
     bytes_read++;
     if (buffer[bytes_read-1] ==  '\0') break;
   }
-  return bytes_read;
+  return bytes_read;*/
+  return 1;
 }
 
 int server_disconnect(int sock_desc) {
