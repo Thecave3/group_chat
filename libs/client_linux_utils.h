@@ -79,9 +79,8 @@ void* server_output(void* struttura) {
     ERROR_HELPER(ret,"Errore recv_message output_thread: ");
     if (ret==0) {
       printf("L'utente ha chiuso la chat.\n");
-      break;
     }
-    printf(">> %s\n",output_buf);
+    printf("%s\n",output_buf);
     }
 
   return NULL;
@@ -105,8 +104,6 @@ int end_end_chat(int sock_desc){
     ERROR_HELPER(ret,"Errore send_message: ");
   }while(strncmp(input_buf,QUIT,strlen(QUIT))!=0);
 
-  ret = pthread_join(t_output, NULL);
-  PTHREAD_ERROR_HELPER(ret,"Errore join con l'output thread: ");
   return 0;
 }
 

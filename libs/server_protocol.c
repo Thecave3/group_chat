@@ -67,7 +67,7 @@ int server_status (int sock_desc, int status) {
 int download_list(int sock_desc, char* buffer, size_t buff_len) {
   int         ret;
   int         query_send = 0;
-  int         bytes_read = 0;
+  //int         bytes_read = 0;
   char        query[5] = {'L','I','S','T','\0'};
 
   while (query_send < QUERY_LEN) {

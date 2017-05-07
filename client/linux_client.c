@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
   pthread_t t_output;
   output_struct * out_params;
   out_params = malloc(sizeof(output_struct));
-  int sock_desc;
+  int sock_desc,ret;
   char name[MAX_LEN_NAME];
   char list[MAX_LEN_LIST];
 
@@ -44,6 +44,8 @@ int main(int argc, char *argv[]) {
   //Lancio shell
   mini_shell(sock_desc,list);
 
+  ret = pthread_join(t_output, NULL);
+  PTHREAD_ERROR_HELPER(ret,"Errore join con l'output thread: ");
 
   printf("Bye Bye\n");
   return 0;
