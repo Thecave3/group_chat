@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -33,5 +34,6 @@ client_l  last_client;
 int add_cl (client_l client);
 int remove_cl (int id);
 int send_cl (int sock_desc);
+int invalid_name(char* name);
 
 #endif

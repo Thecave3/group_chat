@@ -1,6 +1,6 @@
 #include "server_header.h"
 
-#define HELP "usage %s ACTION OPTION\nACTION:\n\t--start: start the server\n\t--kill:  kill the server\nOPTION:\n\t-l:  enable log system\n\t-ld: enable log system in debug mode\n"
+#define HELP "usage %s ACTION OPTION\nACTION:\n\t--start: start the server\n\t--kill:  kill the server\n"
 
 int 	main(int argc, char const *argv[]) {
   FILE     *fp;                                                                   // Filepointer per il salvataggio del risultato della popopen()
@@ -49,8 +49,6 @@ int 	main(int argc, char const *argv[]) {
       check++;                                                                    // Incremento la variabile check
       break;                                                                      // Termino il ciclo
     }
-    else if(strcmp(argv[i], "-l") == 0) continue;                                 // Questo parametro è gestito all'interno della routine del server (logger)
-    else if(strcmp(argv[i], "-ld") == 0) continue;                                // Questo parametro è gestito all'interno della routine del server (logger + debugger)
     else if(strcmp(argv[i], "--help") == 0) {                                     // Se uno dei parametri è uguale a "--kill"
       fprintf(stderr,  HELP, argv[0]);                                            // Stampa la lista dei comandi disponibili per il server
       check++;                                                                    // Incremento la variabile check
