@@ -225,7 +225,8 @@ void connectTo(char* username) {
     ERROR_HELPER(ret, "Errore connessione al server: ");
 
     // Invio username
-    strcat(username,"\0");
+    strcat(username,"\n");
+    printf("%s",username); //debug
     ret = send_message(socket_desc,username,strlen(username));
     ERROR_HELPER(ret,"Errore invio username: ");
 
