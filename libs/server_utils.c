@@ -6,7 +6,6 @@
 int	id_clients;
 
 client_l find_cl(int id) {
-  int ret = -1;
 	if (sem_wait(&client_list_semaphore)) return NULL;
 	client_l aux;
 	aux = client_list;
@@ -18,8 +17,20 @@ client_l find_cl(int id) {
 	return aux;
 }
 
+int invalid_name(char* name) {
+	if (sem_wait(&client_list_semaphore)) return -1;
+	client_l aux;
+	aux = client_list;
+	while (aux != NULL) {
+		if (aux->client_name == name) return 0;
+		aux = aux->next;
+	}
+	if (sem_post(&client_list_semaphore)) return -1;
+	return 1;
+}
+
 int add_cl(client_l client) {
-	if (sem_wait(&client_list_semaphore)) return 0;
+	if (sem_wait(&client_list_semaphore)) return -1;
   client->client_id = id_clients;
   client->client_status = ONLINE;
   if (nclients == 0) {
@@ -34,12 +45,12 @@ int add_cl(client_l client) {
   }
 	nclients++;
   id_clients++;
-  if (sem_post(&client_list_semaphore))return 0;
+  if (sem_post(&client_list_semaphore))return -1;
   return 1;
 }
 
 int remove_cl(int id) {
-  int ret = -1;
+  int ret = 0;
 	if (sem_wait(&client_list_semaphore)) return -1;
   client_l aux, bux;
   aux = client_list;

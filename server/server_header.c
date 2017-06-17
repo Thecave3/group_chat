@@ -52,7 +52,7 @@ void*	client_routine(void *arg) {
   client_l  client = (client_l) arg;
 
   int*      client_id = &client->client_id;
-  int*      status = &client->client_status;
+  // int*      status = &client->client_status;
   int       client_desc = client->client_desc;
   int       bytes_read = 0;
   int       query_ret;
@@ -109,23 +109,7 @@ void*	client_routine(void *arg) {
       break;
     }
     if (strcmp(query, "LIST\0") == 0) send_cl(client_desc);
-    if (strcmp(query, "CONN\0") == 0) {
-      int id_recv;
-      int id_ret;
-      char id[MAX_ID];
-      while(1) {
-        id_ret = recv(client_desc, id + id_recv, 1, 0);
-        if (id_ret == -1 && errno == EINTR) continue;
-        if (id_ret == -1) pthread_exit(NULL);
-        if (id_ret == 0) pthread_exit(NULL);
-        query_recv++;
-        if (id[id_recv-1] == '\n' ||
-            id[id_recv-1] == '\r' ||
-            id[id_recv-1] == '\0' ||
-				    id_ret == MAX_ID) break;
-      }
-      int client_id = atoi(id);
-    }
+    if (strcmp(query, "CONN\0") == 0) continue;
   }
   pthread_exit(NULL);
 }
