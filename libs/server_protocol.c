@@ -149,7 +149,7 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
     ret = send(socket_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
-			if (DEBUG) perror("send_message: error in send");
+			if (DEBUG) perror("send_message: error in send"); //forse va commentato
       return -1;
     }
     bytes_send += ret;
