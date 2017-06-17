@@ -4,13 +4,14 @@
 
 
 int main(int argc, char *argv[]) {
-
   pthread_t t_output;
   output_struct * out_params;
   out_params = malloc(sizeof(output_struct));
-  int sock_desc,ret;
+  sem_t mutex_sem_stdout;
+  int sock_desc,ret,value_sem;
   char name[MAX_LEN_NAME];
   char list[MAX_LEN_LIST];
+  char command[BUF_LEN];
 
   //Incipit e controlli vari sul nome
   if (argv[1] != NULL && strlen(argv[1])<=MAX_LEN_NAME) {
@@ -35,14 +36,35 @@ int main(int argc, char *argv[]) {
   ERROR_HELPER(sock_desc,"Errore connessione al server");
 
   printf("\nConnessione effettuata\n");
-  out_params->sock_desc = sock_desc;
+
+  //Inizializzo il semaforo
+  value_sem = 1;
+  ret = sem_init(&mutex_sem_stdout, 0,value_sem);
+  ERROR_HELPER(ret,"Errore creazione semaforo: ");
 
   // Creazione thread per gestire l'output
+  out_params->sock_desc = sock_desc;
+  out_params->semid = mutex_sem_stdout;
   ret = pthread_create(&t_output,NULL,server_output,out_params);
   PTHREAD_ERROR_HELPER(ret,"Errore creazione thread t_output: ");
 
   //Lancio shell
-  mini_shell(sock_desc,list);
+  printf("\nScrivi \"%s\" per aiuto\n",HELP);
+  //command_request(LIST,sock_desc,list);
+  while (ret==0){
+    ret = sem_wait(&mutex_sem_stdout);
+    PTHREAD_ERROR_HELPER(ret,"Errore sem_wait shell: ");
+    printf("Inserisci un comando: ");
+    fgets(command,sizeof(command),stdin);
+    printf("\n");
+    printf("faccio post in");
+    ret = sem_post(&mutex_sem_stdout);
+    PTHREAD_ERROR_HELPER(ret,"Errore sem_post :");
+    ret = command_request(command,sock_desc,list);
+  }
+
+
+
 
   ret = pthread_join(t_output, NULL);
   PTHREAD_ERROR_HELPER(ret,"Errore join con l'output thread: ");

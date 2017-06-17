@@ -25,8 +25,9 @@
 #define OFFLINE   0
 #define ONLINE    1
 
-// Effettua una connessione TCP con il server e ritorna il descrittore
-// o -1 in caso di errore
+// Effettua una connessione TCP con il server inviando il nome
+// Se il nome è già in uso da qualcuno nel server, allora il server ritorna un messaggio di errore e -1
+// ritorna il descrittore o -1 in caso di errore
 int server_connect(char* name);
 // Scarica la lista dei client connessi in stato ONLINE la salva in un
 // buffer di dimensione buff_len e ritorna il numero di bytes letti o

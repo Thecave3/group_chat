@@ -7,6 +7,7 @@
 #include <sys/shm.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <semaphore.h>
 
 
 #include "colors.h"
@@ -44,6 +45,7 @@
 //Struttura per i parametri del thread di output
 typedef struct{
   int sock_desc;
+  sem_t semid;
   } output_struct;
 
 //Pulisce lo schermo
@@ -72,16 +74,18 @@ void* server_output(void* struttura) {
   char output_buf[BUF_LEN];
   output_struct* params = (output_struct*) struttura;
   int sock_desc = params->sock_desc;
+  sem_t mutex_sem_stdout = params->semid;
   int ret;
 
+  sem_wait(&mutex_sem_stdout);
   while (1) {
     ret = recv_message(sock_desc,output_buf,BUF_LEN);
     ERROR_HELPER(ret,"Errore recv_message output_thread: ");
-    if (ret==0) {
+    if (ret==0)
       printf("L'utente ha chiuso la chat.\n");
-    }
     printf("%s\n",output_buf);
-    }
+  }
+  sem_post(&mutex_sem_stdout);
 
   return NULL;
 }
@@ -179,21 +183,5 @@ int command_request(char* buffer,int sock_desc,char* list) {
       printf("%s\n",KNRM);
       return 0;
     }
-}
-
-
-void mini_shell(int sock_desc,char* list){
-  int ret=0;
-  char command[BUF_LEN];
-
-  printf("\nScrivi \"%s\" per aiuto\n",HELP);
-  command_request(LIST,sock_desc,list);
-
-  while (ret==0){
-    printf("Inserisci un comando: ");
-    fgets(command,sizeof(command),stdin);
-    printf("\n");
-    ret = command_request(command,sock_desc,list);
-  }
 }
 #endif
