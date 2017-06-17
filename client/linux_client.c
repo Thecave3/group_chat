@@ -179,7 +179,7 @@ void kill_handler() {
 void init_threads(int socket_desc) {
     int ret;
 
-    fprintf(stderr, "Connessione con il server avvenuta!\n Digita \"%s\" per uscire dal programma.\n", QUIT);
+    fprintf(stderr, "Connessione con il server avvenuta!\nDigita \"%s\" per uscire dal programma.\n", QUIT);
 
     pthread_t chat_threads[2];
 
@@ -225,6 +225,7 @@ void connectTo(char* username) {
     ERROR_HELPER(ret, "Errore connessione al server: ");
 
     // Invio username
+    strcat(username,"\0");
     ret = send_message(socket_desc,username,strlen(username));
     ERROR_HELPER(ret,"Errore invio username: ");
 
