@@ -65,6 +65,8 @@ void*	client_routine(void *arg) {
   client->next = NULL;
   client->prev = NULL;
 
+  memset(data, 0, PACKET_LEN);
+
   // Recupero il nome da attribuire al client
   while (bytes_read < PACKET_LEN) {
     ret = recv(client_desc, data + bytes_read, 1, 0);
@@ -72,7 +74,11 @@ void*	client_routine(void *arg) {
     if (ret == -1) pthread_exit(NULL);
     if (ret == 0) pthread_exit(NULL);
     bytes_read++;
+    if (data[bytes_read-1] == '\n' ||
+	data[bytes_read-1] == '\r' ||
+	data[bytes_read-1] == '\0') break;
   }
+  data[bytes_read-1] = '\0';
   fprintf(stderr, "client says: %s\n", data);
   // Verifico se esiste gà un client con tale nome
   memcpy(client_name, data, 11);

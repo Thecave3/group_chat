@@ -85,7 +85,7 @@ int recv_message(int socket_desc, char* buffer,  int buffer_len) {
     }
     bytes_read++;
     if (buffer[bytes_read-1] == '\n' ||
-				buffer[bytes_read-1] ==  '\0' ||
+				buffer[bytes_read-1] == '\0' ||
 				bytes_read == buffer_len)
 			break;
   }
