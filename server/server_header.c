@@ -21,7 +21,6 @@ int server_routine(int argc, char const *argv[]) {
   ret = server_init(&server_desc, &server_addr);
   if (ret < 1) exit(EXIT_FAILURE);
   fprintf(stderr, "Server Started\n");
-  daemon(0,1);
 
   client_addr_len = sizeof(client_addr);
 
@@ -55,9 +54,9 @@ void*	client_routine(void *arg) {
   // int*      status = &client->client_status;
   int       client_desc = client->client_desc;
   int       bytes_read = 0;
-  int       query_ret;
-  int       query_send;
-  int       query_recv;
+  int       query_ret = 0;
+  int       query_send = 0;
+  int       query_recv = 0;
   int       ret;
   char*     client_name = client->client_name;
   char      query[QUERY_LEN];
@@ -74,12 +73,12 @@ void*	client_routine(void *arg) {
     if (ret == 0) pthread_exit(NULL);
     bytes_read++;
   }
-
+  fprintf(stderr, "client says: %s\n", data);
   // Verifico se esiste gà un client con tale nome
   memcpy(client_name, data, 11);
   if (invalid_name(client_name)) {
     memcpy("NMAU\0", query, 5);
-      while (query_send < QUERY_LEN) {
+    while (query_send < QUERY_LEN) {
       ret = send(client_desc, query + query_send, QUERY_LEN - query_send, 0);
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) pthread_exit(NULL);

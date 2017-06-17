@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr,"%sNome inserito troppo lungo!\n%s",KRED,KNRM);
         syntaxError(argv[0]);
       } else {
-        connectTo(argv[0]);
+        connectTo(argv[1]);
       }
     } else {
       syntaxError(argv[0]);

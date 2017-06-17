@@ -22,11 +22,11 @@ int invalid_name(char* name) {
 	client_l aux;
 	aux = client_list;
 	while (aux != NULL) {
-		if (aux->client_name == name) return 0;
+		if (aux->client_name == name) return 1;
 		aux = aux->next;
 	}
 	if (sem_post(&client_list_semaphore)) return -1;
-	return 1;
+	return 0;
 }
 
 int add_cl(client_l client) {
