@@ -1,6 +1,6 @@
 #include "server_header.h"
 
-/* Routine principale del server */
+// Routine principale del server
 int server_routine(int argc, char const *argv[]) {
 
   int server_desc ,
@@ -14,6 +14,7 @@ int server_routine(int argc, char const *argv[]) {
   client_list = NULL;
   last_client = NULL;
 
+  // Configurazione del Server
   if (atexit(server_exit) != 0) exit(EXIT_FAILURE);
   if (signal(SIGINT, exit) == SIG_ERR) exit(EXIT_FAILURE);
 
@@ -23,12 +24,16 @@ int server_routine(int argc, char const *argv[]) {
   daemon(0,1);
 
   client_addr_len = sizeof(client_addr);
+
+  // Metto il server in attesa di richieste di connessione
   while(1) {
     memset(&client_addr, 0, sizeof(client_addr));
     client_desc = accept(server_desc,
                          (struct sockaddr *)&client_addr,
                          (socklen_t*)&client_addr_len);
     if (client_desc < 0) continue;
+
+    // Se arriva un client rimando la gestione all'apposito thread
     client_l thread_arg = malloc(sizeof(client_t));
     thread_arg->client_desc = client_desc;
     pthread_t* init_client_thread = malloc(sizeof(pthread_t));
@@ -58,7 +63,7 @@ void*	client_routine(void *arg) {
   char      query[QUERY_LEN];
   char      data[PACKET_LEN];
 
-  client->next = NULL;                                                     // Setto a NULL il campo next
+  client->next = NULL;
   client->prev = NULL;
 
   // Recupero il nome da attribuire al client
