@@ -15,6 +15,7 @@
 #include "../libs/server_protocol.h"
 
 #define MAX_CONN_QUEUE 10
+#define MAX_ID 10
 
 void 	server_exit ();
 void*	client_routine(void* arg);

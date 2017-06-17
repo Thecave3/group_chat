@@ -2,9 +2,10 @@
 
 #define DATA_BUFFER_LEN 16
 
+
 int	id_clients;                                                                  // Contatore che genera id dei client
 
-int	add_cl(client_l client) {
+int add_cl(client_l client) {
 	if (sem_wait(&client_list_semaphore)) return 0;                                // Mi assicuro di essere l'unico ad operare sulla SCL
 	client->client_id = id_clients;                                                // Assegno l'id al client
 	client->client_status = ONLINE;                                                // Setto lo stato ad online
@@ -102,4 +103,32 @@ int 	send_cl(int sock_desc) {
 	}
 	list_len ++;
 	return list_len;
+}
+
+client_l find_cl(int id) {
+  int ret = -1;
+	if (sem_wait(&client_list_semaphore)) return NULL;                             // Mi assicuro di essere l'unico a operare sulla SCL
+	client_l aux, bux;                                                             // Creo due puntatori per gestire la lista
+	aux = client_list;                                                             // Faccio puntare aux alla testa della lista
+	while (aux != NULL) {                                                          // Fin tanto che questo è diverso da NULL
+		if (aux->client_id == id) break;
+		aux = aux->next;                                                             // Scorro la SCL
+	}
+	if (sem_post(&client_list_semaphore)) return NULL;                             // Segnalo agli altri thread che ho finito di operare sulla SCL
+	return aux;                                                                    // Ritorno ret
+}
+
+int invalid_name(char* name) {
+  int ret = 0;
+  if (sem_wait(&client_list_semaphore)) return -1;                               // Mi assicuro di essere l'unico a operare sulla SCL
+  client_l aux, bux;                                                             // Creo due puntatori per gestire la lista
+  aux = client_list;                                                             // Faccio puntare aux alla testa della lista
+  while (aux != NULL) {                                                          // Fin tanto che questo è diverso da NULL
+		if (strcmp(aux->client_name, name) == 0) {                                   // Se aux è l'elemento da eliminare
+	  	ret++;
+    }
+		aux = aux->next;                                                             // Scorro la SCL
+	}
+	if (sem_post(&client_list_semaphore)) return -1;                               // Segnalo agli altri thread che ho finito di operare sulla SCL
+	return ret;                                                                    // Ritorno ret
 }
