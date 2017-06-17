@@ -77,7 +77,7 @@ void* receiveMessage(void* arg) {
               printf("Error in reading operation 78, repeat \n");//mi serve davvero sta riga?
               continue;
             }else{
-              ERROR_HELPER(ret,"Errore nella read:");
+              ERROR_HELPER(ret,"Errore nella read");
             }
           }
           if (ret == 0) {
@@ -179,7 +179,7 @@ void kill_handler() {
 void init_threads(int socket_desc) {
     int ret;
 
-    fprintf(stderr, "Connessione con il server avvenuta! Digita %s per uscire dal programma.\n", QUIT);
+    fprintf(stderr, "Connessione con il server avvenuta!\n Digita \"%s\" per uscire dal programma.\n", QUIT);
 
     pthread_t chat_threads[2];
 
