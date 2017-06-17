@@ -1,33 +1,5 @@
 #include "server_protocol.h"
 
-int server_connect(char* name) {
-  int   ret;
-  int   bytes_send = 0;
-  int   bytes_read = 0;
-  char  data_buffer[PACKET_LEN];
-  char  query_buffer[QUERY_LEN];
-  struct sockaddr_in* sock_addr = malloc(sizeof(struct sockaddr_in));
-  int   sock_desc = socket(AF_INET,SOCK_STREAM,0);
-
-  if (sock_desc <= 0) {
-    return -1;
-  }
-  memcpy (data_buffer	,name , 12);
-  sock_addr->sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
-  sock_addr->sin_family = AF_INET;
-  sock_addr->sin_port = htons(SERVER_PORT);
-  if (connect(sock_desc,(struct sockaddr*) sock_addr,sizeof(struct sockaddr_in))) return -1;
-  while (bytes_send < PACKET_LEN) {
-    ret = send(sock_desc, data_buffer + bytes_send, PACKET_LEN - bytes_send, 0);
-    if (ret == -1 && errno == EINTR) continue;
-    if (ret == -1) {
-			perror("server_connect > send");
-      return -1;
-    }
-    bytes_send += ret;
-  }
-  return;
-}
 
 int server_status (int sock_desc, int status) {
   int         ret;
@@ -61,7 +33,7 @@ int server_status (int sock_desc, int status) {
   return 1;
 }
 
-int download_list(int sock_desc, char* buffer, size_t buff_len) {
+void download_list(int sock_desc, char* buffer, size_t buff_len) {
   int         ret;
   int         query_send = 0;
   //int         bytes_read = 0;
@@ -72,7 +44,7 @@ int download_list(int sock_desc, char* buffer, size_t buff_len) {
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
       if (DEBUG) perror("download_list: error in (query) send");
-      return -1;
+      return;
     }
     query_send ++;
   }
@@ -129,11 +101,7 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
     ret = send(socket_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
-<<<<<<< HEAD
 			if (DEBUG) perror("send_message: error in send"); //forse va commentato
-=======
-    if (DEBUG) perror("send_message: error in send");
->>>>>>> 98d8c24c38c476562e21c7fe28d14f188ea4d41f
       return -1;
     }
     bytes_send += ret;

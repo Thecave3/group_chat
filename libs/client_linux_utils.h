@@ -131,8 +131,7 @@ int command_request(char* buffer,int sock_desc,char* list) {
       display_commands();
       return 0;
     }else if (strncmp(buffer,LIST,strlen(LIST))==0) {
-      ret = download_list(sock_desc,list, sizeof(list));
-      ERROR_HELPER(ret,"Errore download lista: ");
+      download_list(sock_desc,list, sizeof(list));
       printf("Lista utenti connessi:\n%s\n",list);
       return 0;
     }else if (strncmp(buffer,QUIT,strlen(QUIT))==0){

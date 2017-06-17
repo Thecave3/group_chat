@@ -205,7 +205,7 @@ void init_threads(int socket_desc) {
 }
 
 
-
+// Effettua una connessione TCP con il server inviando il nome
 void connectTo(char* username) {
     int ret;
     int socket_desc;
