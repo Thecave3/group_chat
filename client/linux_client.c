@@ -7,7 +7,6 @@ int shouldStop = 0;
 
 void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
-
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
 
@@ -53,20 +52,8 @@ void* receiveMessage(void* arg) {
 
         // at this point (ret==1) our message has been received!
 
-        /** COMPLETE THE FOLLOWING CODE TO READ THE INCOMING MESSAGE
-         *
-         * Read data from recv_fifo into buf until the '\n' character
-         * is encountered (it should be stored in the buffer as well)
-         *
-         * Suggestions:
-         * - read one byte at a time from the socket V
-         * - repeat the operation if interrupted by a signal V
-         * - check for errors V
-         * - check if the endpoint has closed the connection: in that
-         *   case, set shouldStop = 1 and exit from the current thread V
-         * - leave the cycle when '\n' is encountered
-         * - at the end of the cycle, 'bytes_read' should contain the
-         *   exact number of bytes read from the socket ('\n' included)
+        /**
+        Codice gestione lettura chat
          **/
         int bytes_read = 0;
 
@@ -74,10 +61,10 @@ void* receiveMessage(void* arg) {
           ret = read(socket_desc,buf+bytes_read,1);
           if (ret == -1) {
             if (errno == EINTR) {
-              printf("Error in reading operation 78, repeat \n");//mi serve davvero sta riga?
+              fprintf(stderr,"Errore lettura dati, ripeto \n");//mi serve davvero sta riga?
               continue;
             }else{
-              ERROR_HELPER(ret,"Errore nella read");
+              ERROR_HELPER(ret,"Errore nella read, panico");
             }
           }
           if (ret == 0) {
@@ -88,18 +75,19 @@ void* receiveMessage(void* arg) {
           bytes_read++;
         }
 
-
         // Gestione chiusura
         // (note that we subtract 1 to skip the message delimiter '\n')
         if (bytes_read - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
-            fprintf(stderr, "Chat session terminated from endpoint. Please press ENTER to exit.\n");
+            fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPlease press ENTER to exit.\n");
             shouldStop = 1;
         } else {
-            // print received message
-            buf[bytes_read] = '\0';
-            printf("==> %s \n", buf);
+          buf[bytes_read] = '\0';
+
+
+          // Stampa messaggio
+          printf("==> %s \n", buf);
         }
-    }
+      }
 
     pthread_exit(NULL);
 }
@@ -122,23 +110,17 @@ void* sendMessage(void* arg) {
             exit(EXIT_FAILURE);
         }
 
-        // check if the endpoint has closed the connection
-        if (shouldStop) break;
+        // Controlla se il server ha chiuso la connessione
+        if (shouldStop){
+          fprintf(stderr, "%sConnection closed by server\n",KRED );
+          break;
+        }
 
-        // compute number of bytes to send (skip string terminator '\0')
+        // Numero di bytes da mandare (senza string terminator '\0')
         size_t msg_len = strlen(buf);
-      /*  int i =0;
-        for ( i = 0; i < msg_len; i++) {
-          printf("%c char",buf[i] );
-        }*/
-        /** INSERT CODE HERE TO SEND THE USER'S MESSAGE
-         *
-         * Write msg_len bytes from buf to socket_desc
-         *
-         * Suggestions:
-         * - make sure that all bytes have been written! V
-         * - repeat the operation if interrupted before writing any data V
-         * - check for errors v
+
+        /**
+          Codice gestione scrittura chat
          **/
          int bytes_written =0;
          int ret;
@@ -146,19 +128,19 @@ void* sendMessage(void* arg) {
            ret = write(socket_desc,buf+bytes_written,msg_len);
            if (ret==-1) {
              if (errno == EINTR) {
-               printf("operation interrupted before writing any data, repeating\n");
+               fprintf(stderr,"Errore scrittura dati, riperto\n");
                continue;
              }
-             ERROR_HELPER(ret,"Operation interrupted before writing any data, panic \n");
+             ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
            } else if ((bytes_written += ret) == msg_len) break;
          }
 
 
-        // if we just sent a BYE command, we need to update shouldStop!
+        // if we just sent a quit command, we need to update shouldStop!
         // (note that we subtract 1 to skip the message delimiter '\n')
         if (msg_len - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
             shouldStop = 1;
-            fprintf(stderr, "Chat session terminated.\n");
+            fprintf(stderr, "Chat terminata! Bye Bye!\n");
         }
     }
 
@@ -199,7 +181,7 @@ void init_threads(int socket_desc) {
     ret = pthread_join(chat_threads[1], NULL);
     PTHREAD_ERROR_HELPER(ret, "Errore join thread invio messaggi");
 
-    // Close socket
+    // Chiusura socket
     ret = close(socket_desc);
     ERROR_HELPER(ret, "Errore chiusura socket");
 }
