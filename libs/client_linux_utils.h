@@ -30,9 +30,6 @@
 
 #define EXIT_SUCCESS 0
 
-
-#define DEFAULT_NAME "thecave3"
-
 #define GENERIC_ERROR_HELPER(cond, errCode, msg) do {               \
         if (cond) {                                                 \
             fprintf(stderr, "%s: %s\n", msg, strerror(errCode));    \
@@ -41,12 +38,6 @@
     } while(0)
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
-
-//Struttura per i parametri del thread di output
-typedef struct{
-  int sock_desc;
-  sem_t semid;
-  } output_struct;
 
 //Pulisce lo schermo
 void clear_screen() {
