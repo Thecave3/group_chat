@@ -95,18 +95,18 @@ void* receiveMessage(void* arg) {
 void* sendMessage(void* arg) {
     int socket_desc = (int)(long)arg;
 
-    char* close_command = QUIT;
-    size_t close_command_len = strlen(close_command);
-
     char buf[BUF_LEN];
+
+    int shouldSend = 0;
 
     while (!shouldStop) {
         /* Read a line from stdin: fgets() reads up to sizeof(buf)-1
          * bytes and on success returns the first argument passed.
          * Note that '\n' is added at the end of the message when ENTER
          * is pressed: we can thus use it as our message delimiter! */
+        printf("\n>> ");
         if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
-            fprintf(stderr, "Error while reading from stdin, exiting...\n");
+            fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
             exit(EXIT_FAILURE);
         }
 
@@ -116,44 +116,85 @@ void* sendMessage(void* arg) {
           break;
         }
 
-        // Numero di bytes da mandare (senza string terminator '\0')
-        size_t msg_len = strlen(buf);
+        // Analizzo l'input utente interpretando i comandi
+        if(strlen(buf)<MIN_CMD_LEN){
+          printf("%sComando non riconosciuto, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
+          printf("%s\n",KNRM);
+          shouldSend = 0;
+        } else if (strncmp(buf,CLEAR,strlen(CLEAR))==0) {
+          clear_screen();
+          shouldSend = 0;
+        } else if (strncmp(buf,HELP,strlen(HELP))==0) {
+          display_commands();
+          shouldSend = 0;
+        } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
+          printf("Chiusura connessione in corso...\n");
+          shouldSend = 1;
+        } else if (strncmp(buf,LIST,strlen(LIST))==0) {
+          //download_list(sock_desc,list, sizeof(list));
+          printf("Lista utenti connessi:\n%s\n",buf);
+          shouldSend = 1;
+        } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
+          printf("Hai scritto il comando connect verso %s","bubu");
+          printf("\nCerco utente...\n");
+          // devo trovare l'utente all'interno della list
+          //se lo trovo;
+            if (/*strncmp(,user,strlen(user))==0*/0) {
+              printf("Utente trovato!\n");
 
-        /**
-          Codice gestione scrittura chat
-         **/
-         int bytes_written =0;
-         int ret;
-         while (1) {
-           ret = write(socket_desc,buf+bytes_written,msg_len);
-           if (ret==-1) {
-             if (errno == EINTR) {
-               fprintf(stderr,"Errore scrittura dati, riperto\n");
-               continue;
-             }
-             ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
-           } else if ((bytes_written += ret) == msg_len) break;
-         }
+              //richiesta connessione a server
+              shouldSend = 1;
+
+              /*
+              A questo punto l'utente in lista riceve dal server una richiesta di collegamento,
+              l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
+              al server finchè non c'è una risposta
+              */
+
+          }else{
+              printf("%sErrore, utente non trovato!\nSelezionare un utente in lista!\n",KRED);
+              printf("%s\n",KNRM);
+              shouldSend = 0;
+            }
+          }else{
+            printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
+            printf("%s\n",KNRM);
+            shouldSend = 0;
+          }
 
 
-        // if we just sent a quit command, we need to update shouldStop!
-        // (note that we subtract 1 to skip the message delimiter '\n')
-        if (msg_len - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
+
+
+        if(shouldSend){
+          // Numero di bytes da mandare (senza string terminator '\0')
+          size_t msg_len = strlen(buf);
+          // Codice gestione invio dati server
+          int bytes_written = 0;
+          int ret;
+          while (1) {
+            ret = write(socket_desc,buf+bytes_written,msg_len);
+            if (ret==-1) {
+              if (errno == EINTR) {
+                fprintf(stderr,"Errore scrittura dati, riperto\n");
+                continue;
+              }
+              ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
+            } else if ((bytes_written += ret) == msg_len) break;
+          }
+          // È stato inviato il comando QUIT, bisogna chiudere il programma aggiornando shouldStop
+          // (note that we subtract 1 to skip the message delimiter '\n')
+          if (msg_len - 1 == strlen(QUIT) && !memcmp(buf, QUIT, strlen(QUIT))) {
             shouldStop = 1;
             fprintf(stderr, "Chat terminata! Bye Bye!\n");
+          }
         }
+      }
+      pthread_exit(NULL);
     }
-
-    pthread_exit(NULL);
-}
-
 
 // Gestione CTRL-C
 void kill_handler() {
-  	//int ret;
-    //cambio valore di shouldStop
-    //invia stop ai due thread
-    //server_disconnect() disconnette il server
+    shouldStop = 1;
     printf("Chiusura connessione effettuata, bye bye\n");
     exit(EXIT_SUCCESS);
   }
@@ -173,6 +214,8 @@ void init_threads(int socket_desc) {
 
     // Armo il segnale per gestire il CTRL-C
     signal(SIGINT,kill_handler);
+
+    display_commands();
 
     // Aspetto la terminazione del programma
     ret = pthread_join(chat_threads[0], NULL);
