@@ -1,6 +1,4 @@
-#include "../libs/common.h"
 #include "../libs/client_linux_utils.h"
-#include "../libs/server_protocol.h"
 
 
 volatile sig_atomic_t shouldStop = 0;
@@ -130,6 +128,7 @@ void* sendMessage(void* arg) {
           shouldSend = 0;
         } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
           printf("Chiusura connessione in corso...\n");
+          strncpy(buf,"QUIT\0",strlen(buf));
           shouldSend = 1;
         } else if (strncmp(buf,LIST,strlen(LIST))==0) {
           printf("Lista utenti connessi:\n");

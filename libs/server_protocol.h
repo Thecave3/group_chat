@@ -25,21 +25,9 @@
 #define OFFLINE   0
 #define ONLINE    1
 
-// Scarica la lista dei client connessi in stato ONLINE la salva in un
-// buffer di dimensione buff_len e ritorna il numero di bytes letti o
-// -1 in caso di errore
-void download_list(int socket_desc, char* buffer, size_t buff_len);
 // Setta lo status del client a ONLINE o OFFLINE e ritorna 1 in caso di
 // successo e -1 in caso di errore
 int server_status(int sock_desc, int status);
-// Disconnette il client dal server e ritorna 1 in caso di successo e
-// -1 in caso di errore
-int server_disconnect(int sock_desc);
-//Invia una richiesta di connessione al client identificato con l'id client_id
-//Deve essere una chiamata bloccante, ovvero il flusso di esecuzione del codice deve bloccarsi finchè non si ha risposta
-//Ritorna 1 in caso di successo (e parte la chat), 0 in caso di connessione rifiutata da parte dell'altro client,
-// 2 in caso di client non trovato, -1 in caso di errore generico
-int connect_to(int sock_desc, int client_id);
 //Utilizzo queste funzioni per far comunicare fra loro i messaggio dei due client
 //Se uno dei due client vuole chiudere la conversazione, invierà nella chat tramite send_message la stringa "quit"
 //In caso di CTRL-C o di altri segnali il client proverà lo stesso a inviare la stringa quit prima di chiudersi.

@@ -11,7 +11,6 @@
 
 
 #include "colors.h"
-#include "stringer.h"
 #include "server_protocol.h"
 #include "common.h"
 
