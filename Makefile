@@ -5,7 +5,7 @@ S_COMMON = libs/server_protocol.c libs/server_utils.c server/server_header.c
 C_COMMON = libs/server_protocol.c
 CMN = libs/common.h
 
-all: clean cartella server_linux linux_client #test_linux_client
+all: clean cartella server_linux linux_client
 
 clean:
 	rm -rf build

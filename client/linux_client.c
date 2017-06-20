@@ -3,7 +3,7 @@
 #include "../libs/server_protocol.h"
 
 
-int shouldStop = 0;
+volatile sig_atomic_t shouldStop = 0;
 
 void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
@@ -83,9 +83,10 @@ void* receiveMessage(void* arg) {
         } else {
           buf[bytes_read] = '\0';
 
-
           // Stampa messaggio
           printf("==> %s \n", buf);
+          ret = fflush(stdout);
+          ERROR_HELPER(ret,"Errore fflush");
         }
       }
 
@@ -131,39 +132,28 @@ void* sendMessage(void* arg) {
           printf("Chiusura connessione in corso...\n");
           shouldSend = 1;
         } else if (strncmp(buf,LIST,strlen(LIST))==0) {
-          //download_list(sock_desc,list, sizeof(list));
-          printf("Lista utenti connessi:\n%s\n",buf);
+          printf("Lista utenti connessi:\n");
+          strncpy(buf,"LIST\0",strlen(buf));
+          printf("%s\n",buf);
           shouldSend = 1;
         } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
-          printf("Hai scritto il comando connect verso %s","bubu");
-          printf("\nCerco utente...\n");
-          // devo trovare l'utente all'interno della list
-          //se lo trovo;
-            if (/*strncmp(,user,strlen(user))==0*/0) {
-              printf("Utente trovato!\n");
-
-              //richiesta connessione a server
-              shouldSend = 1;
-
-              /*
-              A questo punto l'utente in lista riceve dal server una richiesta di collegamento,
-              l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
-              al server finchè non c'è una risposta
-              */
-
-          }else{
-              printf("%sErrore, utente non trovato!\nSelezionare un utente in lista!\n",KRED);
-              printf("%s\n",KNRM);
-              shouldSend = 0;
-            }
-          }else{
-            printf("%sComando errato, inserire \"help\" per maggiori informazioni\n",KRED);
-            printf("%s\n",KNRM);
-            shouldSend = 0;
+          char user[MAX_LEN_NAME];
+          for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
+            user[i]=buf[strlen(CONNECT)+j];
           }
-
-
-
+          printf("Hai scritto il comando connect verso %s\n",user);
+          // Richiesta connessione a server
+          shouldSend = 1;
+          /*
+            A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
+            l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
+            al server finchè non c'è una risposta
+          */
+        } else {
+          printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
+          printf("%s\n",KNRM);
+          shouldSend = 0;
+        }
 
         if(shouldSend){
           // Numero di bytes da mandare (senza string terminator '\0')
@@ -202,7 +192,7 @@ void kill_handler() {
 void init_threads(int socket_desc) {
     int ret;
 
-    fprintf(stderr, "Connessione con il server avvenuta!\nDigita \"%s\" per uscire dal programma.\n", QUIT);
+    fprintf(stderr, "\nConnessione con il server avvenuta!\nDigita \"%s\" per uscire dal programma.\n", QUIT);
 
     pthread_t chat_threads[2];
 

@@ -39,13 +39,11 @@
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
-//Pulisce lo schermo
+// Pulisce lo schermo
 void clear_screen() {
     printf("%s\e[1;1H\e[2J\n",KNRM);
 }
-
-
-//Mostra l'elenco completo dei comandi disponibile per l'utente
+// Mostra l'elenco completo dei comandi disponibile per l'utente
 void display_commands() {
   printf("-----------------LISTA COMANDI---------------\n\n");
   printf(">> %s",LIST);
@@ -59,4 +57,5 @@ void display_commands() {
   printf(">> %s",HELP);
   printf(" : Mostra questa lista\n\n");
 }
+
 #endif
