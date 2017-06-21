@@ -72,10 +72,24 @@ void* receiveMessage(void* arg) {
       bytes_read++;
     }
 
+    // Gestione richiesta connessione
+    if (bytes_read - 1 == request_command_len && !memcmp(buf, request_command, request_command_len)) {
+      printf("Hai una richiesta di connessione da parte di un altro utente!\n");
+      printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+      if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+        fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
+        exit(EXIT_FAILURE);
+      }
+      while (strncmp(buf,"yes",strlen("yes")) == 0 || strncmp(buf,"no",strlen("no")) == 0) {
+        printf("%sErrore%s\n",KRED,KNRM);
+        printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+      }
+
+    }
+
     // Gestione chiusura
-    // (note that we subtract 1 to skip the message delimiter '\n')
     if (bytes_read - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
-      fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPlease press ENTER to exit.\n");
+      fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPremi ENTER per uscire.\n");
       shouldStop = 1;
     } else {
       buf[bytes_read] = '\0';
