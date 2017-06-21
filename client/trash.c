@@ -21,6 +21,17 @@
     }
     */
 
+  sem_t mutex_sem_stdout;
+
+  ret = sem_wait(&mutex_sem_stdout);
+  PTHREAD_ERROR_HELPER(ret,"Errore sem_wait shell: ");
+  ret = sem_post(&mutex_sem_stdout);
+  PTHREAD_ERROR_HELPER(ret,"Errore sem_post :");
+    //Inizializzo il semaforo
+    value_sem = 1;
+    ret = sem_init(&mutex_sem_stdout, 0,value_sem);
+    ERROR_HELPER(ret,"Errore creazione semaforo: ");
+
 /*
     int end_end_chat(int id_shared_memory){
       int ret;

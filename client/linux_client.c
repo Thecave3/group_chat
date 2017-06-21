@@ -85,6 +85,11 @@ void* receiveMessage(void* arg) {
       while (strncmp(buf,"yes",strlen("yes")) == 0 || strncmp(buf,"no",strlen("no")) == 0) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+        printf(">> ");
+        if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+          fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
+          exit(EXIT_FAILURE);
+        }
       }
 
     }
@@ -126,7 +131,7 @@ void* sendMessage(void* arg) {
     strcat(buf,"\n");
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
-      fprintf(stderr, "%sConnection closed by server\n",KRED );
+      fprintf(stderr, "%sConnessione chiusa dal server\n",KRED );
       break;
     }
 
@@ -176,10 +181,10 @@ void* sendMessage(void* arg) {
         ret = write(socket_desc,buf+bytes_written,msg_len);
         if (ret==-1) {
           if (errno == EINTR) {
-            fprintf(stderr,"Errore scrittura dati, riperto\n");
+            fprintf(stderr,"Errore scrittura dati, ripeto\n");
             continue;
           }
-          ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
+          ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
         } else if ((bytes_written += ret) == msg_len) break;
       }
       // È stato inviato il comando QUIT, bisogna chiudere il programma aggiornando shouldStop
