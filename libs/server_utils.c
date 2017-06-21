@@ -101,8 +101,6 @@ int send_cl(int sock_desc) {
 		if (aux->client_status == ONLINE) {
 			fprintf(stderr, "%s\n", aux->client_name);
 			memset(data_buffer, 0, DATA_BUFFER_LEN);
-			sprintf(data_buffer,"%d" ,aux->client_id);
-			strcat(data_buffer, "\n");
 			strcat(data_buffer, aux->client_name);
 			strcat(data_buffer,"\n\r");
 			data_buffer_len = strlen(data_buffer);

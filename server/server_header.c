@@ -60,30 +60,30 @@ void*	client_routine(void *arg) {
   int       ret;
   char*     client_name = client->client_name;
   char      query[QUERY_LEN];
-  char      data[PACKET_LEN];
+  char      name[MAX_LEN_NAME];
 
   client->next = NULL;
   client->prev = NULL;
 
-  memset(data, 0, PACKET_LEN);
+  memset(name, 0, PACKET_LEN);
 
   // Recupero il nome da attribuire al client
   while (bytes_read < PACKET_LEN) {
-    ret = recv(client_desc, data + bytes_read, 1, 0);
+    ret = recv(client_desc, name + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) pthread_exit(NULL);
     if (ret == 0) pthread_exit(NULL);
     bytes_read++;
-    if (data[bytes_read-1] == '\n' ||
-	data[bytes_read-1] == '\r' ||
-	data[bytes_read-1] == '\0') break;
+    if (name[bytes_read-1] == '\n' ||
+	      name[bytes_read-1] == '\r' ||
+	      name[bytes_read-1] == '\0') break;
   }
-  data[bytes_read-1] = '\0';
-  fprintf(stderr, "client says: %s\n", data);
+  name[bytes_read-1] = '\0';
+
   // Verifico se esiste gà un client con tale nome
-  memcpy(client_name, data, 11);
+  memcpy(client_name, name, MAX_LEN_NAME);
   if (invalid_name(client_name)) {
-    memcpy("NMAU\0", query, 5);
+    memcpy("NMAU\0", query, QUERY_LEN);
     while (query_send < QUERY_LEN) {
       ret = send(client_desc, query + query_send, QUERY_LEN - query_send, 0);
       if (ret == -1 && errno == EINTR) continue;
@@ -93,6 +93,7 @@ void*	client_routine(void *arg) {
     free(client);
     pthread_exit(NULL);
   }
+
   // In caso contrario aggiungo il client al database
   add_cl(client);
 
@@ -109,7 +110,7 @@ void*	client_routine(void *arg) {
       if (query_recv == QUERY_LEN) break;
     }
     query[query_recv-1] = '\0';
-    if (strcmp(query, "QUIT\0") == 0) {
+    if (strcmp(query, ) == 0) {
       remove_cl(*client_id);
       break;
     }
