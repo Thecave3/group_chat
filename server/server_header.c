@@ -48,27 +48,26 @@ int server_routine(int argc, char const *argv[]) {
 
 /* Routine di gestione dei client */
 void*	client_routine(void *arg) {
+
   client_l  client = (client_l) arg;
 
-  int*      client_id = &client->client_id;
-  // int*      status = &client->client_status;
-  int       client_desc = client->client_desc;
-  int       bytes_read = 0;
-  int       query_ret = 0;
-  int       query_send = 0;
-  int       query_recv = 0;
   int       ret;
+  int       bytes_read;
+  int       bytes_send;
+  int       client_desc = client->client_desc;
+  int*      client_id = &client->client_id;
   char*     client_name = client->client_name;
-  char      query[QUERY_LEN];
   char      name[MAX_LEN_NAME];
 
   client->next = NULL;
   client->prev = NULL;
 
-  memset(name, 0, PACKET_LEN);
+  memset(name, 0, MAX_LEN_NAME);
+
+  bytes_read = 0;
 
   // Recupero il nome da attribuire al client
-  while (bytes_read < PACKET_LEN) {
+  while (bytes_read < MAX_LEN_NAME) {
     ret = recv(client_desc, name + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) pthread_exit(NULL);
@@ -82,13 +81,19 @@ void*	client_routine(void *arg) {
 
   // Verifico se esiste gà un client con tale nome
   memcpy(client_name, name, MAX_LEN_NAME);
+
+  bytes_send = 0;
+
   if (invalid_name(client_name)) {
-    memcpy("NMAU\0", query, QUERY_LEN);
-    while (query_send < QUERY_LEN) {
-      ret = send(client_desc, query + query_send, QUERY_LEN - query_send, 0);
+    char* query;
+    memcpy(query, "NAME_ALREADY_USED", 0);
+    while (1) {
+      ret = send(client_desc, query + bytes_send, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) pthread_exit(NULL);
-      query_send += ret;
+      if (ret == 0) pthread_exit(NULL);
+      bytes_send++;
+      if (name[bytes_read-1] == '\n') break;
     }
     free(client);
     pthread_exit(NULL);
@@ -99,23 +104,7 @@ void*	client_routine(void *arg) {
 
   // Mi metto in attesa di eventuali messaggi da parte di quest'ultimo
   while (1) {
-    query_recv = 0;
-    memset(query, 0, QUERY_LEN);
-    while (query_ret < QUERY_LEN) {
-      query_ret = recv(client_desc, query + query_recv, 1, 0);
-      if (query_ret == -1 && errno == EINTR) continue;
-      if (query_ret == -1) pthread_exit(NULL);
-      if (query_ret == 0) pthread_exit(NULL);
-      query_recv++;
-      if (query_recv == QUERY_LEN) break;
-    }
-    query[query_recv-1] = '\0';
-    if (strcmp(query, ) == 0) {
-      remove_cl(*client_id);
-      break;
-    }
-    if (strcmp(query, "LIST\0") == 0) send_cl(client_desc);
-    if (strcmp(query, "CONN\0") == 0) continue;
+
   }
   pthread_exit(NULL);
 }

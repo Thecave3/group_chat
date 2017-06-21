@@ -10,20 +10,17 @@
 #include <netinet/in.h>
 
 #define DEBUG		0
-// Lunghezza delle query al server
-#define QUERY_LEN       5
 // Address del server
 #define SERVER_ADDRESS  "127.0.0.1"
 // Porta del server
 #define SERVER_PORT     8583
-// Lunghezza dei dati da inviare al server
-#define PACKET_LEN      16
 // Lunghezza massima del nome del client
 #define MAX_LEN_NAME    10
 
-#define CONNECT         "connect"
-#define CLEAR           "clear"
-#define QUIT            "quit"
+#define CONNECT         	"connect"
+#define CLEAR           	"clear\n"
+#define QUIT            	"quit\n"
+#define NAME_ALREADY_USED	"name_used\n"
 
 // Stati del client
 #define OFFLINE   0
