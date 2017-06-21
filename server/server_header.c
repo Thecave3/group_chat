@@ -52,6 +52,7 @@ void*	client_routine(void *arg) {
   int       bytes_read;
   int       bytes_send;
   int       client_desc = client->client_desc;
+  int*      client_id   = &client->client_id;
   char*     client_name = client->client_name;
   char      data[MAX_DATA_LEN];
 
@@ -116,12 +117,11 @@ void*	client_routine(void *arg) {
     data[bytes_read-1] = '\n';
 
     if (strcmp(data, QUIT) == 0) {
-      fprintf(stderr, "QUIT\n");
+      remove_cl(*client_id);
+      pthread_exit(NULL);
     }
 
-    if (strcmp(data, LIST) == 0) {
-      fprintf(stderr, "LIST\n");
-    }
+    if (strcmp(data, LIST) == 0) send_cl(client->client_desc);
   }
   pthread_exit(NULL);
 }
