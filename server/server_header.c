@@ -93,7 +93,7 @@ void*	client_routine(void *arg) {
       if (ret == -1) pthread_exit(NULL);
       if (ret == 0) pthread_exit(NULL);
       bytes_send++;
-      if (name[bytes_read-1] == '\n') break;
+      if (name[bytes_send-1] == '\n') break;
     }
     free(client);
     pthread_exit(NULL);
