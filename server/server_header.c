@@ -53,31 +53,31 @@ void*	client_routine(void *arg) {
   int       bytes_send;
   int       client_desc = client->client_desc;
   char*     client_name = client->client_name;
-  char      name[MAX_LEN_NAME];
+  char      data[MAX_DATA_LEN];
 
-  memset(name, 0, MAX_LEN_NAME);
+  memset(data, 0, MAX_LEN_NAME);
 
   bytes_read = 0;
 
   // Recupero il nome da attribuire al client
   while (bytes_read < MAX_LEN_NAME) {
-    ret = recv(client_desc, name + bytes_read, 1, 0);
+    ret = recv(client_desc, data + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) pthread_exit(NULL);
     bytes_read++;
-    if (name[bytes_read-1] == '\n' ||
-	      name[bytes_read-1] == '\r' ||
-	      name[bytes_read-1] == '\0')
+    if (data[bytes_read-1] == '\n' ||
+	      data[bytes_read-1] == '\r' ||
+	      data[bytes_read-1] == '\0')
       break;
   }
-  name[bytes_read-1] = '\0';
+  data[bytes_read-1] = '\0';
 
-  memcpy(client_name, name, bytes_read);
+  memcpy(client_name, data, bytes_read);
 
   bytes_send = 0;
 
   // Verifico se esiste gà un client con tale nome
-  if (valid_name(name) <= 0) {
+  if (valid_name(client_name) <= 0) {
     int query_size = strlen(NAME_ALREADY_USED);
     char* query = malloc(sizeof(char)*query_size);
     fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
@@ -97,7 +97,23 @@ void*	client_routine(void *arg) {
 
   add_cl(client);
 
-  fprintf(stderr, "Client %s connected\n", client_name);
+  bytes_read = 0;
+  memset(data, 0, MAX_DATA_LEN);
+
+  while (1) {
+    while (1) {
+      ret = recv(client_desc, data + bytes_read, 1, 0);
+      if (ret == -1 && errno == EINTR) continue;
+      if (ret == -1) pthread_exit(NULL);
+      bytes_read++;
+      if (data[bytes_read-1] == '\n' ||
+	        data[bytes_read-1] == '\r' ||
+	        data[bytes_read-1] == '\0')
+        break;
+    }
+  }
+
+  fprintf(stderr, "Client %s says: %s\n", client_name, data);
 
   pthread_exit(NULL);
 }

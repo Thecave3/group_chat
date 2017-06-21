@@ -14,6 +14,7 @@
 
 #define OFFLINE	0
 #define ONLINE 	1
+#define MAX_DATA_LEN    256
 #define MAX_LEN_NAME    10
 
 typedef struct client_s {
