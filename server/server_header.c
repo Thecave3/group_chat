@@ -64,7 +64,6 @@ void*	client_routine(void *arg) {
     ret = recv(client_desc, name + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) pthread_exit(NULL);
-    if (ret == 0) pthread_exit(NULL);
     bytes_read++;
     if (name[bytes_read-1] == '\n' ||
 	      name[bytes_read-1] == '\r' ||
