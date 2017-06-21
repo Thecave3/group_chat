@@ -51,7 +51,9 @@ void* receiveMessage(void* arg) {
 
     if (ret == 0) continue; // Timeout scaduto
 
-    // In questo momento (ret==1) quindi è stato ricevuto il messaggios
+    // In questo momento (ret==1) quindi è stato ricevuto il messaggio
+
+//    printf("select == 1 \n");
 
     // Codice gestione lettura chat
 
@@ -61,19 +63,23 @@ void* receiveMessage(void* arg) {
       ret = read(socket_desc,buf+bytes_read,1);
       if (ret == -1) {
         if (errno == EINTR) {
-          fprintf(stderr,"Errore lettura dati, ripeto \n");//mi serve davvero sta riga?
           continue;
         }else{
           ERROR_HELPER(ret,"Errore nella read, panico");
         }
       }
       if (ret == 0) {
+        printf("SONO RET ==\n");
         shouldStop = 1;
         break;
       }
       if(buf[bytes_read] == '\n') break;
+      printf("leggo: %s\n",buf);
       bytes_read++;
+      printf("%d\n",bytes_read);
     }
+
+    printf("cazzo\n");
 
     // Gestione richiesta connessione
     if (bytes_read - 1 == request_command_len && !memcmp(buf, request_command, request_command_len)) {
