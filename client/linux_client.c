@@ -7,6 +7,8 @@ void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
+  char* request_command = "CODICERICHIESTADADEFINIRE" ;
+  size_t request_command_len = strlen(request_command);
 
   /* select() uses sets of descriptors and a timeval interval. The
   * methods returns when either an event occurs on a descriptor in
