@@ -117,6 +117,7 @@ void*	client_routine(void *arg) {
     data[bytes_read-1] = '\n';
 
     if (strcmp(data, QUIT) == 0) {
+      fprintf(stderr, "Client %s disconnected\n", client_name);
       remove_cl(*client_id);
       pthread_exit(NULL);
     }
