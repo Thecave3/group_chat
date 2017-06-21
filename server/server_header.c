@@ -96,12 +96,9 @@ void*	client_routine(void *arg) {
 
   fprintf(stderr, "New client %s connected\n", client_name);
 
-  bytes_read = 0;
-
   while (1) {
-
+    bytes_read = 0;
     memset(data, 0, MAX_DATA_LEN);
-
     while (1) {
       ret = recv(client_desc, data + bytes_read, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
@@ -113,6 +110,8 @@ void*	client_routine(void *arg) {
 	        data[bytes_read-1] == '\0')
         break;
     }
+
+    fprintf(stderr, "%s\n", data);
 
     data[bytes_read-1] = '\n';
 
