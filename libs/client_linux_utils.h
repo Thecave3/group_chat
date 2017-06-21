@@ -25,17 +25,17 @@
 #define EXIT_SUCCESS 0
 
 #define GENERIC_ERROR_HELPER(cond, errCode, msg) do {               \
-        if (cond) {                                                 \
-            fprintf(stderr, "%s: %s\n", msg, strerror(errCode));    \
-            exit(EXIT_FAILURE);                                     \
-        }                                                           \
-    } while(0)
+  if (cond) {                                                 \
+    fprintf(stderr, "%s: %s\n", msg, strerror(errCode));    \
+    exit(EXIT_FAILURE);                                     \
+  }                                                           \
+} while(0)
 #define ERROR_HELPER(ret, msg)          GENERIC_ERROR_HELPER((ret < 0), errno, msg)
 #define PTHREAD_ERROR_HELPER(ret, msg)  GENERIC_ERROR_HELPER((ret != 0), ret, msg)
 
 // Pulisce lo schermo
 void clear_screen() {
-    printf("%s\e[1;1H\e[2J\n",KNRM);
+  printf("%s\e[1;1H\e[2J\n",KNRM);
 }
 // Mostra l'elenco completo dei comandi disponibile per l'utente
 void display_commands() {

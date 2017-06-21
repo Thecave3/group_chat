@@ -8,18 +8,18 @@ void* receiveMessage(void* arg) {
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
 
-    /* select() uses sets of descriptors and a timeval interval. The
-     * methods returns when either an event occurs on a descriptor in
-     * the sets during the given interval, or when that time elapses.
-     *
-     * The first argument for select is the maximum descriptor among
-     * those in the sets plus one. Note also that both the sets and
-     * the timeval argument are modified by the call, so you should
-     * reinitialize them across multiple invocations.
-     *
-     * On success, select() returns the number of descriptors in the
-     * given sets for which data may be available, or 0 if the timeout
-     * expires before any event occurs. */
+  /* select() uses sets of descriptors and a timeval interval. The
+  * methods returns when either an event occurs on a descriptor in
+  * the sets during the given interval, or when that time elapses.
+  *
+  * The first argument for select is the maximum descriptor among
+  * those in the sets plus one. Note also that both the sets and
+  * the timeval argument are modified by the call, so you should
+  * reinitialize them across multiple invocations.
+  *
+  * On success, select() returns the number of descriptors in the
+  * given sets for which data may be available, or 0 if the timeout
+  * expires before any event occurs. */
 
   // Serve settare un intervallo per evitare di intasare la CPU con controlli
   struct timeval timeout;
@@ -29,245 +29,243 @@ void* receiveMessage(void* arg) {
   char buf[BUF_LEN];
 
   while (!shouldStop) {
-        int ret;
+    int ret;
 
-        // Popolo i valori della struttura del timeout in modo da fare il check ogni 1.5 secondi in modo da lasciare la CPU il più libera possibile
-        timeout.tv_sec  = 1;
-        timeout.tv_usec = 500000;
+    // Popolo i valori della struttura del timeout in modo da fare il check ogni 1.5 secondi in modo da lasciare la CPU il più libera possibile
+    timeout.tv_sec  = 1;
+    timeout.tv_usec = 500000;
 
-        // Inizializzo a 0 i bit del set di file descriptors da passare alla select
-        FD_ZERO(&read_descriptors);
-        // Imposto nel set di file descriptors il valore del socket descriptor ottenuto dalla connessione del server
-        FD_SET(socket_desc, &read_descriptors);
+    // Inizializzo a 0 i bit del set di file descriptors da passare alla select
+    FD_ZERO(&read_descriptors);
+    // Imposto nel set di file descriptors il valore del socket descriptor ottenuto dalla connessione del server
+    FD_SET(socket_desc, &read_descriptors);
 
-        // Lancio la select
-        ret = select(nfds, &read_descriptors, NULL, NULL, &timeout);
+    // Lancio la select
+    ret = select(nfds, &read_descriptors, NULL, NULL, &timeout);
 
-        if (ret == -1 && errno == EINTR) continue;
-        ERROR_HELPER(ret, "Errore select!");
+    if (ret == -1 && errno == EINTR) continue;
+    ERROR_HELPER(ret, "Errore select!");
 
-        if (ret == 0) continue; // Viene scattato il timeout
+    if (ret == 0) continue; // Timeout scaduto
 
-        // at this point (ret==1) our message has been received!
+    // at this point (ret==1) our message has been received!
 
-        /**
-        Codice gestione lettura chat
-         **/
-        int bytes_read = 0;
+    /**
+    Codice gestione lettura chat
+    **/
+    int bytes_read = 0;
 
-        while (1) {
-          ret = read(socket_desc,buf+bytes_read,1);
-          if (ret == -1) {
-            if (errno == EINTR) {
-              fprintf(stderr,"Errore lettura dati, ripeto \n");//mi serve davvero sta riga?
-              continue;
-            }else{
-              ERROR_HELPER(ret,"Errore nella read, panico");
-            }
-          }
-          if (ret == 0) {
-            shouldStop = 1;
-            break;
-            }
-          if(buf[bytes_read] == '\n') break;
-          bytes_read++;
-        }
-
-        // Gestione chiusura
-        // (note that we subtract 1 to skip the message delimiter '\n')
-        if (bytes_read - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
-            fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPlease press ENTER to exit.\n");
-            shouldStop = 1;
-        } else {
-          buf[bytes_read] = '\0';
-
-          // Stampa messaggio
-          printf("==> %s \n", buf);
-          ret = fflush(stdout);
-          ERROR_HELPER(ret,"Errore fflush");
+    while (1) {
+      ret = read(socket_desc,buf+bytes_read,1);
+      if (ret == -1) {
+        if (errno == EINTR) {
+          fprintf(stderr,"Errore lettura dati, ripeto \n");//mi serve davvero sta riga?
+          continue;
+        }else{
+          ERROR_HELPER(ret,"Errore nella read, panico");
         }
       }
+      if (ret == 0) {
+        shouldStop = 1;
+        break;
+      }
+      if(buf[bytes_read] == '\n') break;
+      bytes_read++;
+    }
 
-    pthread_exit(NULL);
+    // Gestione chiusura
+    // (note that we subtract 1 to skip the message delimiter '\n')
+    if (bytes_read - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
+      fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPlease press ENTER to exit.\n");
+      shouldStop = 1;
+    } else {
+      buf[bytes_read] = '\0';
+
+      // Stampa messaggio
+      printf("==> %s \n", buf);
+      ret = fflush(stdout);
+      ERROR_HELPER(ret,"Errore fflush");
+    }
+  }
+
+  pthread_exit(NULL);
 }
 
 void* sendMessage(void* arg) {
-    int socket_desc = (int)(long)arg;
+  int socket_desc = (int)(long)arg;
 
-    char buf[BUF_LEN];
+  char buf[BUF_LEN];
 
-    int shouldSend = 0;
+  int shouldSend = 0;
 
-    while (!shouldStop) {
-        /* Read a line from stdin: fgets() reads up to sizeof(buf)-1
-         * bytes and on success returns the first argument passed.
-         * Note that '\n' is added at the end of the message when ENTER
-         * is pressed: we can thus use it as our message delimiter! */
-        printf("\n>> ");
-        if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
-            fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
-            exit(EXIT_FAILURE);
-        }
-
-        // Controlla se il server ha chiuso la connessione
-        if (shouldStop){
-          fprintf(stderr, "%sConnection closed by server\n",KRED );
-          break;
-        }
-
-        // Analizzo l'input utente interpretando i comandi
-        if(strlen(buf)<MIN_CMD_LEN){
-          printf("%sComando non riconosciuto, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
-          printf("%s\n",KNRM);
-          shouldSend = 0;
-        } else if (strncmp(buf,CLEAR,strlen(CLEAR))==0) {
-          clear_screen();
-          shouldSend = 0;
-        } else if (strncmp(buf,HELP,strlen(HELP))==0) {
-          display_commands();
-          shouldSend = 0;
-        } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
-          printf("Chiusura connessione in corso...\n");
-          shouldSend = 1;
-        } else if (strncmp(buf,LIST,strlen(LIST))==0) {
-          printf("Lista utenti connessi:\n");
-          strncpy(buf,"LIST\0",strlen(buf));
-          shouldSend = 1;
-        } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
-          char user[MAX_LEN_NAME];
-          for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
-            user[i]=buf[strlen(CONNECT)+j];
-          }
-          printf("Hai scritto il comando connect verso %s\n",user);
-
-          // Richiesta connessione a server
-          shouldSend = 1;
-          /*
-            A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
-            l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
-            al server finchè non c'è una risposta
-          */
-        } else {
-          printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
-          printf("%s\n",KNRM);
-          shouldSend = 0;
-        }
-
-        if(shouldSend){
-          // Numero di bytes da mandare (senza string terminator '\0')
-          // Codice gestione invio dati server
-          size_t msg_len = strlen(buf);
-          int bytes_written = 0;
-          int ret;
-          while (1) {
-            ret = write(socket_desc,buf+bytes_written,msg_len);
-            if (ret==-1) {
-              if (errno == EINTR) {
-                fprintf(stderr,"Errore scrittura dati, riperto\n");
-                continue;
-              }
-              ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
-            } else if ((bytes_written += ret) == msg_len) break;
-          }
-          // È stato inviato il comando QUIT, bisogna chiudere il programma aggiornando shouldStop
-          // (note that we subtract 1 to skip the message delimiter '\n')
-          if (msg_len - 1 == strlen(QUIT) && !memcmp(buf, QUIT, strlen(QUIT))) {
-            shouldStop = 1;
-            fprintf(stderr, "Chat terminata! Bye Bye!\n");
-          }
-        }
-      }
-      pthread_exit(NULL);
+  while (!shouldStop) {
+    /* Read a line from stdin: fgets() reads up to sizeof(buf)-1
+    * bytes and on success returns the first argument passed.
+    * Note that '\n' is added at the end of the message when ENTER
+    * is pressed: we can thus use it as our message delimiter! */
+    printf("\n>> ");
+    if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+      fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
+      exit(EXIT_FAILURE);
     }
+
+    // Controlla se il server ha chiuso la connessione
+    if (shouldStop){
+      fprintf(stderr, "%sConnection closed by server\n",KRED );
+      break;
+    }
+
+    // Analizzo l'input utente interpretando i comandi
+    if(strlen(buf)<MIN_CMD_LEN){
+      printf("%sComando non riconosciuto, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
+      printf("%s\n",KNRM);
+      shouldSend = 0;
+    } else if (strncmp(buf,CLEAR,strlen(CLEAR))==0) {
+      clear_screen();
+      shouldSend = 0;
+    } else if (strncmp(buf,HELP,strlen(HELP))==0) {
+      display_commands();
+      shouldSend = 0;
+    } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
+      printf("Chiusura connessione in corso...\n");
+      shouldSend = 1;
+    } else if (strncmp(buf,LIST,strlen(LIST))==0) {
+      printf("Lista utenti connessi:\n");
+      strncpy(buf,"LIST\0",strlen(buf));
+      shouldSend = 1;
+    } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
+      char user[MAX_LEN_NAME];
+      for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
+        user[i]=buf[strlen(CONNECT)+j];
+      }
+      printf("Hai scritto il comando connect verso %s\n",user);
+      shouldSend = 1;
+      /*
+      A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
+      l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
+      al server finchè non c'è una risposta
+      */
+    } else {
+      printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
+      printf("%s\n",KNRM);
+      shouldSend = 0;
+    }
+
+    if(shouldSend){
+      // Numero di bytes da mandare (senza string terminator '\0')
+      // Codice gestione invio dati server
+      size_t msg_len = strlen(buf);
+      int bytes_written = 0;
+      int ret;
+      while (1) {
+        ret = write(socket_desc,buf+bytes_written,msg_len);
+        if (ret==-1) {
+          if (errno == EINTR) {
+            fprintf(stderr,"Errore scrittura dati, riperto\n");
+            continue;
+          }
+          ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
+        } else if ((bytes_written += ret) == msg_len) break;
+      }
+      // È stato inviato il comando QUIT, bisogna chiudere il programma aggiornando shouldStop
+      // (note that we subtract 1 to skip the message delimiter '\n')
+      if (msg_len - 1 == strlen(QUIT) && !memcmp(buf, QUIT, strlen(QUIT))) {
+        shouldStop = 1;
+        fprintf(stderr, "Chat terminata! Bye Bye!\n");
+      }
+    }
+  }
+  pthread_exit(NULL);
+}
 
 // Gestione CTRL-C
 void kill_handler() {
-    shouldStop = 1;
-    printf("Chiusura connessione effettuata, bye bye\n");
-    exit(EXIT_SUCCESS);
-  }
+  shouldStop = 1;
+  printf("Chiusura connessione effettuata, bye bye\n");
+  exit(EXIT_SUCCESS);
+}
 
 void init_threads(int socket_desc) {
-    int ret;
+  int ret;
 
-    fprintf(stderr, "\nConnessione con il server avvenuta!\nDigita \"%s\" per uscire dal programma.\n", QUIT);
+  fprintf(stderr, "\nConnessione con il server avvenuta!\nDigita \"%s\" per uscire dal programma.\n", QUIT);
 
-    pthread_t chat_threads[2];
+  pthread_t chat_threads[2];
 
-    ret = pthread_create(&chat_threads[0], NULL, receiveMessage, (void*)(long)socket_desc);
-    PTHREAD_ERROR_HELPER(ret, "Errore creazione thread ricezione messaggi");
+  ret = pthread_create(&chat_threads[0], NULL, receiveMessage, (void*)(long)socket_desc);
+  PTHREAD_ERROR_HELPER(ret, "Errore creazione thread ricezione messaggi");
 
-    ret = pthread_create(&chat_threads[1], NULL, sendMessage, (void*)(long)socket_desc);
-    PTHREAD_ERROR_HELPER(ret, "Errore creazione thread invio messaggi");
+  ret = pthread_create(&chat_threads[1], NULL, sendMessage, (void*)(long)socket_desc);
+  PTHREAD_ERROR_HELPER(ret, "Errore creazione thread invio messaggi");
 
-    // Armo il segnale per gestire il CTRL-C
-    signal(SIGINT,kill_handler);
+  // Armo il segnale per gestire il CTRL-C
+  signal(SIGINT,kill_handler);
 
-    display_commands();
+  display_commands();
 
-    // Aspetto la terminazione del programma
-    ret = pthread_join(chat_threads[0], NULL);
-    PTHREAD_ERROR_HELPER(ret, "Errore join thread ricezione messaggi");
+  // Aspetto la terminazione del programma
+  ret = pthread_join(chat_threads[0], NULL);
+  PTHREAD_ERROR_HELPER(ret, "Errore join thread ricezione messaggi");
 
-    ret = pthread_join(chat_threads[1], NULL);
-    PTHREAD_ERROR_HELPER(ret, "Errore join thread invio messaggi");
+  ret = pthread_join(chat_threads[1], NULL);
+  PTHREAD_ERROR_HELPER(ret, "Errore join thread invio messaggi");
 
-    // Chiusura socket
-    ret = close(socket_desc);
-    ERROR_HELPER(ret, "Errore chiusura socket");
+  // Chiusura socket
+  ret = close(socket_desc);
+  ERROR_HELPER(ret, "Errore chiusura socket");
 }
 
 
 // Effettua una connessione TCP con il server inviando il nome
 void connectTo(char* username) {
-    int ret;
-    int socket_desc;
-    struct sockaddr_in server_addr = {0};
+  int ret;
+  int socket_desc;
+  struct sockaddr_in server_addr = {0};
 
-    // Creazione socket
-    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-    ERROR_HELPER(socket_desc, "Errore creazione socket: ");
+  // Creazione socket
+  socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+  ERROR_HELPER(socket_desc, "Errore creazione socket: ");
 
-    // Set up dei parametri per a connessione
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
-    server_addr.sin_family      = AF_INET;
-    server_addr.sin_port        = htons(SERVER_PORT);
+  // Set up dei parametri per a connessione
+  server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
+  server_addr.sin_family      = AF_INET;
+  server_addr.sin_port        = htons(SERVER_PORT);
 
-    // Connessione alla socket del server
-    ret = connect(socket_desc, (struct sockaddr*) &server_addr, sizeof(struct sockaddr_in));
-    ERROR_HELPER(ret, "Errore connessione al server: ");
+  // Connessione alla socket del server
+  ret = connect(socket_desc, (struct sockaddr*) &server_addr, sizeof(struct sockaddr_in));
+  ERROR_HELPER(ret, "Errore connessione al server: ");
 
-    // Invio username
-    strcat(username,"\n");
-    ret = send_message(socket_desc,username,strlen(username));
-    ERROR_HELPER(ret,"Errore invio username: ");
+  // Invio username
+  strcat(username,"\n");
+  ret = send_message(socket_desc,username,strlen(username));
+  ERROR_HELPER(ret,"Errore invio username: ");
 
-    // Lancio inizializzazione shell
-    init_threads(socket_desc);
+  // Lancio inizializzazione shell
+  init_threads(socket_desc);
 }
 
-
+// Gestisce input errati da parte dell'utente all'inizio del programma
 void syntaxError(char* prog_name) {
-    fprintf(stderr, "Uso del programma:\n");
-    fprintf(stderr, "       %s <nome_utente>\n", prog_name);
-    fprintf(stderr, "Nota che <nome_utente> deve essere al massimo di %d caratteri\n", MAX_LEN_NAME);
-    exit(EXIT_FAILURE);
+  fprintf(stderr, "Uso del programma:\n");
+  fprintf(stderr, "       %s <nome_utente>\n", prog_name);
+  fprintf(stderr, "Nota che <nome_utente> deve essere al massimo di %d caratteri\n", MAX_LEN_NAME);
+  exit(EXIT_FAILURE);
 }
 
 int main(int argc, char* argv[]) {
-    if (argc == 2) {
-      // Prendo il nome utente
-      if (strlen(argv[1])>MAX_LEN_NAME){
-        fprintf(stderr,"%sNome inserito troppo lungo!\n%s",KRED,KNRM);
-        syntaxError(argv[0]);
-      } else {
-        printf("Benvenuto %s", argv[1]);
-        printf("Provo a connettermi al server...\n");
-        connectTo(argv[1]);
-      }
-    } else {
+  if (argc == 2) {
+    // Prendo il nome utente
+    if (strlen(argv[1])>MAX_LEN_NAME){
+      fprintf(stderr,"%sNome inserito troppo lungo!\n%s",KRED,KNRM);
       syntaxError(argv[0]);
+    } else {
+      printf("Benvenuto %s", argv[1]);
+      printf("Provo a connettermi al server...\n");
+      connectTo(argv[1]);
     }
+  } else {
+    syntaxError(argv[0]);
+  }
 
-    exit(EXIT_SUCCESS);
+  exit(EXIT_SUCCESS);
 }

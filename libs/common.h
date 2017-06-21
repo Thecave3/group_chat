@@ -1,3 +1,6 @@
+#ifndef COMMON_H
+#define COMMON_H
+
 #include <netdb.h>
 #include <stdio.h>
 #include <errno.h>
@@ -6,7 +9,6 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <ncurses.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <arpa/inet.h>
@@ -25,3 +27,5 @@
 #define MAX_CLIENTS 5 // Numero massimo di client che si possono connettere al server contemporaneamente
 #define MAX_IP_LEN 16
 #define MAX_PORT_LEN 5
+
+#endif
