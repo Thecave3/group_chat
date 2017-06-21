@@ -4,12 +4,22 @@
 volatile sig_atomic_t shouldStop = 0;
 volatile sig_atomic_t shouldWait = 0;
 
+
+// Gestione CTRL-C
+void kill_handler() {
+  shouldStop = 1;
+  printf("Chiusura connessione effettuata, bye bye\n");
+  exit(EXIT_SUCCESS);
+}
+
 void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
   char* request_command = "CODICERICHIESTADADEFINIRE" ;
   size_t request_command_len = strlen(request_command);
+  char* already_used_alert = NAME_ALREADY_USED ;
+  size_t already_used_alert_len = strlen(already_used_alert);
 
   /* select() uses sets of descriptors and a timeval interval. The
   * methods returns when either an event occurs on a descriptor in
@@ -53,8 +63,6 @@ void* receiveMessage(void* arg) {
 
     // In questo momento (ret==1) quindi è stato ricevuto il messaggio
 
-//    printf("select == 1 \n");
-
     // Codice gestione lettura chat
 
     int bytes_read = 0;
@@ -69,20 +77,22 @@ void* receiveMessage(void* arg) {
         }
       }
       if (ret == 0) {
-        printf("SONO RET ==\n");
         shouldStop = 1;
         break;
       }
       if(buf[bytes_read] == '\n') break;
-      printf("leggo: %s\n",buf);
       bytes_read++;
-      printf("%d\n",bytes_read);
     }
 
-    printf("cazzo\n");
+    // Gestione name already used
+    if (strncmp(buf,already_used_alert,already_used_alert_len)==0) {
+      printf("%sErrore, nome già in uso sul server\n",KRED);
+      shouldStop = 1;
+      kill_handler();
+    }
 
     // Gestione richiesta connessione
-    if (bytes_read - 1 == request_command_len && !memcmp(buf, request_command, request_command_len)) {
+    if (strncmp(buf,request_command,request_command_len)==0) {
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
       shouldWait = 1;
@@ -103,7 +113,7 @@ void* receiveMessage(void* arg) {
     }
 
     // Gestione chiusura
-    if (bytes_read - 1 == close_command_len && !memcmp(buf, close_command, close_command_len)) {
+    if (strncmp(buf,close_command,close_command_len)==0) {
       fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPremi ENTER per uscire.\n");
       shouldStop = 1;
     } else {
@@ -163,7 +173,7 @@ void* sendMessage(void* arg) {
       shouldSend = 1;
     } else if (strncmp(buf,LIST,strlen(LIST))==0) {
       printf("Lista utenti connessi:\n");
-      strncpy(buf,"LIST\0",strlen(buf));
+      strncpy(buf,"list\n",strlen(buf));
       shouldSend = 1;
     } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
       char user[MAX_LEN_NAME];
@@ -209,13 +219,6 @@ void* sendMessage(void* arg) {
     }
   }
   pthread_exit(NULL);
-}
-
-// Gestione CTRL-C
-void kill_handler() {
-  shouldStop = 1;
-  printf("Chiusura connessione effettuata, bye bye\n");
-  exit(EXIT_SUCCESS);
 }
 
 void init_threads(int socket_desc) {
