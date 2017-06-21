@@ -12,6 +12,7 @@ void kill_handler() {
   exit(EXIT_SUCCESS);
 }
 
+// Routine di ricezione dei messaggi
 void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   char* close_command = QUIT;
@@ -20,19 +21,6 @@ void* receiveMessage(void* arg) {
   size_t request_command_len = strlen(request_command);
   char* already_used_alert = NAME_ALREADY_USED ;
   size_t already_used_alert_len = strlen(already_used_alert);
-
-  /* select() uses sets of descriptors and a timeval interval. The
-  * methods returns when either an event occurs on a descriptor in
-  * the sets during the given interval, or when that time elapses.
-  *
-  * The first argument for select is the maximum descriptor among
-  * those in the sets plus one. Note also that both the sets and
-  * the timeval argument are modified by the call, so you should
-  * reinitialize them across multiple invocations.
-  *
-  * On success, select() returns the number of descriptors in the
-  * given sets for which data may be available, or 0 if the timeout
-  * expires before any event occurs. */
 
   // Serve settare un intervallo per evitare di intasare la CPU con controlli
   struct timeval timeout;
@@ -120,7 +108,7 @@ void* receiveMessage(void* arg) {
       buf[bytes_read] = '\0';
 
       // Stampa messaggio
-      printf("==> %s \n", buf);
+      printf("\n==> %s \n", buf);
       ret = fflush(stdout);
       ERROR_HELPER(ret,"Errore fflush");
     }
@@ -129,6 +117,7 @@ void* receiveMessage(void* arg) {
   pthread_exit(NULL);
 }
 
+// Routine di gestione dell'invio dei messaggi
 void* sendMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   int ret;
@@ -138,10 +127,6 @@ void* sendMessage(void* arg) {
 
 
   while (!shouldStop) {
-    /* Read a line from stdin: fgets() reads up to sizeof(buf)-1
-    * bytes and on success returns the first argument passed.
-    * Note that '\n' is added at the end of the message when ENTER
-    * is pressed: we can thus use it as our message delimiter! */
     printf("\n>> ");
     if(!shouldWait){
       if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
@@ -213,7 +198,7 @@ void* sendMessage(void* arg) {
       // (note that we subtract 1 to skip the message delimiter '\n')
       if (msg_len - 1 == strlen(QUIT) && !memcmp(buf, QUIT, strlen(QUIT))) {
         shouldStop = 1;
-        fprintf(stderr, "Chat terminata! Bye Bye!\n");
+        kill_handler();
       }
     }
   }
