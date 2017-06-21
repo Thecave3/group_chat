@@ -48,11 +48,10 @@ void* receiveMessage(void* arg) {
 
     if (ret == 0) continue; // Timeout scaduto
 
-    // at this point (ret==1) our message has been received!
+    // In questo momento (ret==1) quindi è stato ricevuto il messaggios
+    
+    // Codice gestione lettura chat
 
-    /**
-    Codice gestione lettura chat
-    **/
     int bytes_read = 0;
 
     while (1) {
@@ -188,7 +187,7 @@ void kill_handler() {
 void init_threads(int socket_desc) {
   int ret;
 
-  fprintf(stderr, "\nConnessione con il server avvenuta!\nDigita \"%s\" per uscire dal programma.\n", QUIT);
+  fprintf(stderr, "\nConnessione con il server avvenuta!\n", QUIT);
 
   pthread_t chat_threads[2];
 
@@ -259,7 +258,7 @@ int main(int argc, char* argv[]) {
       fprintf(stderr,"%sNome inserito troppo lungo!\n%s",KRED,KNRM);
       syntaxError(argv[0]);
     } else {
-      printf("Benvenuto %s", argv[1]);
+      printf("Benvenuto %s\n", argv[1]);
       printf("Provo a connettermi al server...\n");
       connectTo(argv[1]);
     }
