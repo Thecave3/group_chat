@@ -18,7 +18,7 @@
 #define MAX_LEN_NAME    10
 
 #define CONNECT         	"connect"
-#define CLEAR           	"clear\n"
+#define LIST              "list\n"
 #define QUIT            	"quit\n"
 #define NAME_ALREADY_USED	"name_used\n"
 

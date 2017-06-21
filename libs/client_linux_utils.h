@@ -14,8 +14,8 @@
 #include "server_protocol.h"
 #include "common.h"
 
-#define LIST "list"
-#define HELP "help"
+#define CLEAR           	"clear"
+#define HELP              "help"
 #define MIN_CMD_LEN 4
 
 #define STON "STON\0"
@@ -40,16 +40,16 @@ void clear_screen() {
 // Mostra l'elenco completo dei comandi disponibile per l'utente
 void display_commands() {
   printf("-----------------LISTA COMANDI---------------\n\n");
-  printf(">> %s",LIST);
-  printf(" :Mostra la lista degli utenti connessi\n\n");
-  printf(">> %s",CONNECT);
-  printf(" NOME_UTENTE : Richiesta connessione verso un utente \n\n");
-  printf(">> %s",QUIT);
-  printf(" : Disconnessione dal server ed uscita dal programma.\n\n");
-  printf(">> %s",CLEAR);
-  printf(" : Pulisci schermo\n\n");
-  printf(">> %s",HELP);
-  printf(" : Mostra questa lista\n\n");
+  printf(">> Mostra la lista degli utenti connessi: ");
+  printf("%s%s%s\n",KGRN,LIST,KNRM);
+  printf(">> Richiesta connessione verso un utente: ");
+  printf("%s%s NOME_UTENTE%s\n\n",KGRN,CONNECT,KNRM);
+  printf(">> Disconnessione dal server ed uscita dal programma: ");
+  printf("%s%s%s\n",KGRN,QUIT,KNRM);
+  printf(">> Pulisci schermo: ");
+  printf("%s%s%s\n\n",KGRN,CLEAR,KNRM);
+  printf(">> Mostra questa lista: ");
+  printf("%s%s%s\n",KGRN,HELP,KNRM);
 }
 
 #endif
