@@ -17,7 +17,7 @@
 // Porta del server
 #define SERVER_PORT     8583
 // Lunghezza dei dati da inviare al server
-#define PACKET_LEN      16
+#define PACKET_LEN      11
 // Lunghezza massima del nome del client
 #define MAX_LEN_NAME    10
 
