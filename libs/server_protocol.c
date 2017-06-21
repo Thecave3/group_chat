@@ -1,38 +1,6 @@
 #include "server_protocol.h"
 
 
-int server_status (int sock_desc, int status) {
-  int         ret;
-  int         query_send = 0;
-  char        query[5];
-
-  if (status == ONLINE) {
-      query[0] = 'S';
-      query[1] = 'T';
-      query[2] = 'O';
-      query[3] = 'N';
-      query[4] = '\0';
-  }
-  if (status == OFFLINE) {
-    query[0] = 'S';
-    query[1] = 'T';
-    query[2] = 'O';
-    query[3] = 'F';
-    query[4] = '\0';
-  }
-
-  while (query_send < QUERY_LEN) {
-    ret = send(sock_desc, query + query_send, QUERY_LEN - query_send, 0);
-    if (ret == -1 && errno == EINTR) continue;
-    if (ret == -1) {
-      if (DEBUG) perror("server_status: error in send");
-      return -1;
-    }
-    query_send += ret;
-  }
-  return 1;
-}
-
 int recv_message(int socket_desc, char* buffer,  int buffer_len) {
   int   ret;
   int   bytes_read = 0;

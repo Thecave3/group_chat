@@ -26,9 +26,6 @@
 #define OFFLINE   0
 #define ONLINE    1
 
-// Setta lo status del client a ONLINE o OFFLINE e ritorna 1 in caso di
-// successo e -1 in caso di errore
-int server_status(int sock_desc, int status);
 //Utilizzo queste funzioni per far comunicare fra loro i messaggio dei due client
 //Se uno dei due client vuole chiudere la conversazione, invierà nella chat tramite send_message la stringa "quit"
 //In caso di CTRL-C o di altri segnali il client proverà lo stesso a inviare la stringa quit prima di chiudersi.
