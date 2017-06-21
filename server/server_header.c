@@ -52,7 +52,6 @@ void*	client_routine(void *arg) {
   int       bytes_read;
   int       bytes_send;
   int       client_desc = client->client_desc;
-  int*      client_id = &client->client_id;
   char*     client_name = client->client_name;
   char      name[MAX_LEN_NAME];
 
@@ -75,9 +74,22 @@ void*	client_routine(void *arg) {
 
   memcpy(client_name, name, bytes_read);
 
+  bytes_send = 0;
+
   // Verifico se esiste gà un client con tale nome
   if (valid_name(name) <= 0) {
-    pthread_exit(NULL);
+    int query_size = strlen(NAME_ALREADY_USED)+1;
+    char* query = malloc(sizeof(char)*query_size);
+    memcpy(query, NAME_ALREADY_USED, query_size);
+    while (1) {
+      ret = send(client_desc, query + bytes_send, 1, 0);
+      if (ret == -1 && errno == EINTR) continue;
+      if (ret == -1) pthread_exit(NULL);
+      if (ret == 0) pthread_exit(NULL);
+      bytes_send++;
+      if (name[bytes_send-1] == '\n') break;
+      pthread_exit(NULL);
+    }
   }
 
   add_cl(client);

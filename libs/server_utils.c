@@ -18,8 +18,7 @@ client_l find_cl(int id) {
 }
 
 int valid_name(char* name) {
-  if (sem_wait(&client_list_semaphore)) return -1;
-	client_l aux;
+  client_l aux;
   int ret = 1;
 	aux = client_list;
 	while (aux != NULL) {
@@ -29,7 +28,6 @@ int valid_name(char* name) {
     }
 		aux = aux->next;
 	}
-  if (sem_post(&client_list_semaphore)) return -1;
 	return ret;
 }
 
