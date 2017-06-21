@@ -97,9 +97,11 @@ void*	client_routine(void *arg) {
   fprintf(stderr, "New client %s connected\n", client_name);
 
   bytes_read = 0;
-  memset(data, 0, MAX_DATA_LEN);
 
   while (1) {
+
+    memset(data, 0, MAX_DATA_LEN);
+
     while (1) {
       ret = recv(client_desc, data + bytes_read, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
@@ -115,11 +117,11 @@ void*	client_routine(void *arg) {
     data[bytes_read-1] = '\n';
 
     if (strcmp(data, QUIT) == 0) {
-      fprintf(stderr, "QUIT");
+      fprintf(stderr, "QUIT\n");
     }
 
     if (strcmp(data, LIST) == 0) {
-      fprintf(stderr, "LIST");
+      fprintf(stderr, "LIST\n");
     }
   }
   pthread_exit(NULL);
