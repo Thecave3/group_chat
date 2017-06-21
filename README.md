@@ -40,8 +40,8 @@ Build 0.1
 ## client_linux
 
 Architecture concept:
-* Client Monothread e shell utente che gestisce gli user-input con chiamate mappate sulle API del server
-* Interazione con il server tramite API poggianti su chiamate C-UNIX
+* Client Multithread e shell utente che gestisce gli user-input e manda le requests al server
+* Interazione con il server tramite logic API integrate nella shel poggianti su chiamate C-UNIX
 
 Chiamate disponibili per l'utente:
 
