@@ -86,11 +86,10 @@ void*	client_routine(void *arg) {
       ret = send(client_desc, query + bytes_send, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) pthread_exit(NULL);
-      if (ret == 0) pthread_exit(NULL);
       bytes_send++;
-      if (name[bytes_read-1] == '\n' ||
-	        name[bytes_read-1] == '\r' ||
-	        name[bytes_read-1] == '\0')
+      if (name[bytes_send-1] == '\n' ||
+	        name[bytes_send-1] == '\r' ||
+	        name[bytes_send-1] == '\0')
         break;
     }
     pthread_exit(NULL);
