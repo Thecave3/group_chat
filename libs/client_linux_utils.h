@@ -26,7 +26,7 @@
 
 #define GENERIC_ERROR_HELPER(cond, errCode, msg) do {               \
   if (cond) {                                                 \
-    fprintf(stderr, "%s: %s\n", msg, strerror(errCode));    \
+    fprintf(stderr, "%s%s: %s\n",KRED, msg, strerror(errCode));    \
     exit(EXIT_FAILURE);                                     \
   }                                                           \
 } while(0)
@@ -50,6 +50,7 @@ void display_commands() {
   printf("%s%s%s\n\n",KGRN,CLEAR,KNRM);
   printf(">> Mostra questa lista: ");
   printf("%s%s%s\n",KGRN,HELP,KNRM);
+  ERROR_HELPER(fflush(stdout),"Errore fflush");
 }
 
 #endif

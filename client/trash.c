@@ -21,6 +21,22 @@
     }
     */
 
+  sem_t mutex_sem_stdout;
+
+  //Inizializzo il semaforo
+  int value_sem = 1;
+  ret = sem_init(&mutex_sem_stdout, 0,value_sem);
+  ERROR_HELPER(ret,"Errore creazione semaforo: ");
+
+
+    ret = sem_wait(&mutex_sem_stdout);
+    PTHREAD_ERROR_HELPER(ret,"Errore sem_wait shell: ");
+    ret = sem_post(&mutex_sem_stdout);
+    PTHREAD_ERROR_HELPER(ret,"Errore sem_post :");
+
+    // Distruzione semaforo
+    ret = sem_destroy(&mutex_sem_stdout);
+    PTHREAD_ERROR_HELPER(ret,"Errore sem_destroy");
 /*
     int end_end_chat(int id_shared_memory){
       int ret;

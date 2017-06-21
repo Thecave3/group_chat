@@ -2,6 +2,7 @@
 
 
 volatile sig_atomic_t shouldStop = 0;
+volatile sig_atomic_t shouldWait = 0;
 
 void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
@@ -78,6 +79,7 @@ void* receiveMessage(void* arg) {
     if (bytes_read - 1 == request_command_len && !memcmp(buf, request_command, request_command_len)) {
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+      shouldWait = 1;
       if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
@@ -85,8 +87,13 @@ void* receiveMessage(void* arg) {
       while (strncmp(buf,"yes",strlen("yes")) == 0 || strncmp(buf,"no",strlen("no")) == 0) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+        printf(">> ");
+        if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+          fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
+          exit(EXIT_FAILURE);
+        }
       }
-
+      shouldWait = 0;
     }
 
     // Gestione chiusura
@@ -108,10 +115,12 @@ void* receiveMessage(void* arg) {
 
 void* sendMessage(void* arg) {
   int socket_desc = (int)(long)arg;
-
+  int ret;
   char buf[BUF_LEN];
 
-  int shouldSend = 0;
+  volatile sig_atomic_t shouldSend = 0;
+
+  display_commands();
 
   while (!shouldStop) {
     /* Read a line from stdin: fgets() reads up to sizeof(buf)-1
@@ -119,14 +128,16 @@ void* sendMessage(void* arg) {
     * Note that '\n' is added at the end of the message when ENTER
     * is pressed: we can thus use it as our message delimiter! */
     printf("\n>> ");
-    if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
-      fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
-      exit(EXIT_FAILURE);
+    if(!shouldWait){
+      if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+        fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
+        exit(EXIT_FAILURE);
+      }
     }
     strcat(buf,"\n");
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
-      fprintf(stderr, "%sConnection closed by server\n",KRED );
+      fprintf(stderr, "%sConnessione chiusa dal server\n",KRED );
       break;
     }
 
@@ -160,6 +171,7 @@ void* sendMessage(void* arg) {
       l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
       al server finchè non c'è una risposta
       */
+      shouldWait = 1;
     } else {
       printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
       printf("%s\n",KNRM);
@@ -171,15 +183,15 @@ void* sendMessage(void* arg) {
       // Codice gestione invio dati server
       size_t msg_len = strlen(buf);
       int bytes_written = 0;
-      int ret;
+
       while (1) {
         ret = write(socket_desc,buf+bytes_written,msg_len);
         if (ret==-1) {
           if (errno == EINTR) {
-            fprintf(stderr,"Errore scrittura dati, riperto\n");
+            fprintf(stderr,"Errore scrittura dati, ripeto\n");
             continue;
           }
-          ERROR_HELPER(ret,"Errore scrittura dati fatale, panico \n");
+          ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
         } else if ((bytes_written += ret) == msg_len) break;
       }
       // È stato inviato il comando QUIT, bisogna chiudere il programma aggiornando shouldStop
@@ -215,8 +227,6 @@ void init_threads(int socket_desc) {
 
   // Armo il segnale per gestire il CTRL-C
   signal(SIGINT,kill_handler);
-
-  display_commands();
 
   // Aspetto la terminazione del programma
   ret = pthread_join(chat_threads[0], NULL);
