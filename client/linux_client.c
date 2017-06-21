@@ -261,6 +261,8 @@ int main(int argc, char* argv[]) {
         fprintf(stderr,"%sNome inserito troppo lungo!\n%s",KRED,KNRM);
         syntaxError(argv[0]);
       } else {
+        printf("Benvenuto %s", argv[1]);
+        printf("Provo a connettermi al server...\n");
         connectTo(argv[1]);
       }
     } else {

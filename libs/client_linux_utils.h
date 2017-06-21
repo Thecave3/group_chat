@@ -17,8 +17,6 @@
 #define LIST "list"
 #define HELP "help"
 #define MIN_CMD_LEN 4
-#define CLIENT_SIZE 32
-#define CLIENT_QUEUE 1
 
 #define STON "STON\0"
 #define STOF "STOF\0"
