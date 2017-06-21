@@ -86,7 +86,7 @@ void* receiveMessage(void* arg) {
 
     // Gestione name already used
     if (strncmp(buf,already_used_alert,already_used_alert_len)==0) {
-      printf("%sErrore, nome già in uso sul server\n",KRED);
+      printf("\n%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       kill_handler();
     }
@@ -136,7 +136,6 @@ void* sendMessage(void* arg) {
 
   volatile sig_atomic_t shouldSend = 0;
 
-  display_commands();
 
   while (!shouldStop) {
     /* Read a line from stdin: fgets() reads up to sizeof(buf)-1
