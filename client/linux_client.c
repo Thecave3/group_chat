@@ -198,7 +198,7 @@ void* sendMessage(void* arg) {
       // (note that we subtract 1 to skip the message delimiter '\n')
       if (msg_len - 1 == strlen(QUIT) && !memcmp(buf, QUIT, strlen(QUIT))) {
         shouldStop = 1;
-        fprintf(stderr, "Chat terminata! Bye Bye!\n");
+        kill_handler();
       }
     }
   }
