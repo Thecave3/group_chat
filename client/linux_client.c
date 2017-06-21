@@ -107,7 +107,7 @@ void* sendMessage(void* arg) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
       exit(EXIT_FAILURE);
     }
-
+    strcat(buf,"\n");
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
       fprintf(stderr, "%sConnection closed by server\n",KRED );
@@ -223,7 +223,7 @@ void connectTo(char* username) {
 
   // Creazione socket
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-  ERROR_HELPER(socket_desc, "Errore creazione socket: ");
+  ERROR_HELPER(socket_desc, "Errore creazione socket");
 
   // Set up dei parametri per a connessione
   server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
@@ -232,12 +232,12 @@ void connectTo(char* username) {
 
   // Connessione alla socket del server
   ret = connect(socket_desc, (struct sockaddr*) &server_addr, sizeof(struct sockaddr_in));
-  ERROR_HELPER(ret, "Errore connessione al server: ");
+  ERROR_HELPER(ret, "Errore connessione al server");
 
   // Invio username
   strcat(username,"\n");
   ret = send_message(socket_desc,username,strlen(username));
-  ERROR_HELPER(ret,"Errore invio username: ");
+  ERROR_HELPER(ret,"Errore invio username");
 
   // Lancio inizializzazione shell
   init_threads(socket_desc);
