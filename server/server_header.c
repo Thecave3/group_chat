@@ -68,7 +68,8 @@ void*	client_routine(void *arg) {
     bytes_read++;
     if (name[bytes_read-1] == '\n' ||
 	      name[bytes_read-1] == '\r' ||
-	      name[bytes_read-1] == '\0') break;
+	      name[bytes_read-1] == '\0')
+      break;
   }
   name[bytes_read-1] = '\0';
 
@@ -80,6 +81,7 @@ void*	client_routine(void *arg) {
   if (valid_name(name) <= 0) {
     int query_size = strlen(NAME_ALREADY_USED)+1;
     char* query = malloc(sizeof(char)*query_size);
+    fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
     memcpy(query, NAME_ALREADY_USED, query_size);
     while (1) {
       ret = send(client_desc, query + bytes_send, 1, 0);
@@ -87,12 +89,17 @@ void*	client_routine(void *arg) {
       if (ret == -1) pthread_exit(NULL);
       if (ret == 0) pthread_exit(NULL);
       bytes_send++;
-      if (name[bytes_send-1] == '\n') break;
-      pthread_exit(NULL);
+      if (name[bytes_read-1] == '\n' ||
+	        name[bytes_read-1] == '\r' ||
+	        name[bytes_read-1] == '\0')
+        break;
     }
+    pthread_exit(NULL);
   }
 
   add_cl(client);
+
+  fprintf(stderr, "Client %s connected\n", client_name);
 
   pthread_exit(NULL);
 }
