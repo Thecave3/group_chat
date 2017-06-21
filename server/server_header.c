@@ -50,9 +50,9 @@ void*	client_routine(void *arg) {
 
   int       ret;
   int       bytes_read;
-  // int       bytes_send;
+  int       bytes_send;
   int       client_desc = client->client_desc;
-  // int*      client_id = &client->client_id;
+  int*      client_id = &client->client_id;
   char*     client_name = client->client_name;
   char      name[MAX_LEN_NAME];
 
@@ -75,16 +75,12 @@ void*	client_routine(void *arg) {
 
   memcpy(client_name, name, bytes_read);
 
-
   // Verifico se esiste gà un client con tale nome
   if (valid_name(name) <= 0) {
-    fprintf(stderr, "Name Already Used!");
     pthread_exit(NULL);
   }
 
   add_cl(client);
-
-  fprintf(stderr, "New client %s connected\n", client_name);
 
   pthread_exit(NULL);
 }

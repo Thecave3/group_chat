@@ -18,15 +18,19 @@ client_l find_cl(int id) {
 }
 
 int valid_name(char* name) {
-	if (sem_wait(&client_list_semaphore)) return -1;
+  if (sem_wait(&client_list_semaphore)) return -1;
 	client_l aux;
+  int ret = 1;
 	aux = client_list;
 	while (aux != NULL) {
-    if (strcmp(aux->client_name, name) == 0) return 0;
+    if (strcmp(aux->client_name, name) == 0) {
+      ret = 0;
+      break;
+    }
 		aux = aux->next;
 	}
-	if (sem_post(&client_list_semaphore)) return -1;
-	return 1;
+  if (sem_post(&client_list_semaphore)) return -1;
+	return ret;
 }
 
 int add_cl(client_l client) {
