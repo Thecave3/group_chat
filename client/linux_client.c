@@ -128,12 +128,10 @@ void* sendMessage(void* arg) {
           shouldSend = 0;
         } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
           printf("Chiusura connessione in corso...\n");
-          strncpy(buf,"QUIT\0",strlen(buf));
           shouldSend = 1;
         } else if (strncmp(buf,LIST,strlen(LIST))==0) {
           printf("Lista utenti connessi:\n");
           strncpy(buf,"LIST\0",strlen(buf));
-          printf("%s\n",buf);
           shouldSend = 1;
         } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
           char user[MAX_LEN_NAME];
@@ -141,6 +139,7 @@ void* sendMessage(void* arg) {
             user[i]=buf[strlen(CONNECT)+j];
           }
           printf("Hai scritto il comando connect verso %s\n",user);
+
           // Richiesta connessione a server
           shouldSend = 1;
           /*
@@ -156,8 +155,8 @@ void* sendMessage(void* arg) {
 
         if(shouldSend){
           // Numero di bytes da mandare (senza string terminator '\0')
-          size_t msg_len = strlen(buf);
           // Codice gestione invio dati server
+          size_t msg_len = strlen(buf);
           int bytes_written = 0;
           int ret;
           while (1) {

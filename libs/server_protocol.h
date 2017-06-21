@@ -21,6 +21,10 @@
 // Lunghezza massima del nome del client
 #define MAX_LEN_NAME    10
 
+#define CONNECT         "connect"
+#define CLEAR           "clear"
+#define QUIT            "quit"
+
 // Stati del client
 #define OFFLINE   0
 #define ONLINE    1

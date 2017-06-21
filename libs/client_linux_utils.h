@@ -15,10 +15,7 @@
 #include "common.h"
 
 #define LIST "list"
-#define CONNECT "connect"
 #define HELP "help"
-#define CLEAR "clear"
-#define QUIT "quit"
 #define MIN_CMD_LEN 4
 #define CLIENT_SIZE 32
 #define CLIENT_QUEUE 1
