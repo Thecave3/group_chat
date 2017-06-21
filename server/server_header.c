@@ -78,7 +78,7 @@ void*	client_routine(void *arg) {
 
   // Verifico se esiste gà un client con tale nome
   if (valid_name(name) <= 0) {
-    int query_size = strlen(NAME_ALREADY_USED)+1;
+    int query_size = strlen(NAME_ALREADY_USED);
     char* query = malloc(sizeof(char)*query_size);
     fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
     memcpy(query, NAME_ALREADY_USED, query_size);
@@ -87,9 +87,9 @@ void*	client_routine(void *arg) {
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) pthread_exit(NULL);
       bytes_send++;
-      if (name[bytes_send-1] == '\n' ||
-	        name[bytes_send-1] == '\r' ||
-	        name[bytes_send-1] == '\0')
+      if (query[bytes_send-1] == '\n' ||
+	        query[bytes_send-1] == '\r' ||
+	        query[bytes_send-1] == '\0')
         break;
     }
     pthread_exit(NULL);
