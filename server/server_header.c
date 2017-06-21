@@ -64,6 +64,7 @@ void*	client_routine(void *arg) {
     ret = recv(client_desc, data + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) pthread_exit(NULL);
+    if (ret == 0) pthread_exit(NULL);
     bytes_read++;
     if (data[bytes_read-1] == '\n' ||
 	      data[bytes_read-1] == '\r' ||
@@ -82,20 +83,18 @@ void*	client_routine(void *arg) {
     char* query = malloc(sizeof(char)*query_size);
     fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
     memcpy(query, NAME_ALREADY_USED, query_size);
-    while (1) {
+    while (bytes_send < query_size) {
       ret = send(client_desc, query + bytes_send, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) pthread_exit(NULL);
       bytes_send++;
-      if (query[bytes_send-1] == '\n' ||
-	        query[bytes_send-1] == '\r' ||
-	        query[bytes_send-1] == '\0')
-        break;
     }
     pthread_exit(NULL);
   }
 
   add_cl(client);
+
+  fprintf(stderr, "New client %s connected\n", client_name);
 
   bytes_read = 0;
   memset(data, 0, MAX_DATA_LEN);
@@ -105,16 +104,24 @@ void*	client_routine(void *arg) {
       ret = recv(client_desc, data + bytes_read, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) pthread_exit(NULL);
+      if (ret == 0) pthread_exit(NULL);
       bytes_read++;
       if (data[bytes_read-1] == '\n' ||
 	        data[bytes_read-1] == '\r' ||
 	        data[bytes_read-1] == '\0')
         break;
     }
+
+    data[bytes_read-1] = '\n';
+
+    if (strcmp(data, QUIT) == 0) {
+      fprintf(stderr, "QUIT");
+    }
+
+    if (strcmp(data, LIST) == 0) {
+      fprintf(stderr, "LIST");
+    }
   }
-
-  fprintf(stderr, "Client %s says: %s\n", client_name, data);
-
   pthread_exit(NULL);
 }
 
