@@ -11,9 +11,6 @@ int server_routine(int argc, char const *argv[]) {
   struct sockaddr_in  server_addr ,
                       client_addr;
 
-  client_list = NULL;
-  last_client = NULL;
-
   // Configurazione del Server
   if (atexit(server_exit) != 0) exit(EXIT_FAILURE);
   if (signal(SIGINT, exit) == SIG_ERR) exit(EXIT_FAILURE);
@@ -55,12 +52,9 @@ void*	client_routine(void *arg) {
   int       bytes_read;
   int       bytes_send;
   int       client_desc = client->client_desc;
-  int*      client_id = &client->client_id;
+  // int*      client_id = &client->client_id;
   char*     client_name = client->client_name;
   char      name[MAX_LEN_NAME];
-
-  client->next = NULL;
-  client->prev = NULL;
 
   memset(name, 0, MAX_LEN_NAME);
 
@@ -84,9 +78,10 @@ void*	client_routine(void *arg) {
 
   bytes_send = 0;
 
-  if (invalid_name(client_name)) {
-    char* query;
-    memcpy(query, "NAME_ALREADY_USED", 0);
+  if (valid_name(client_name) == 0) {
+    fprintf(stderr, "Name Already Used!");
+    char* query = malloc(sizeof(char)*strlen(NAME_ALREADY_USED));
+    memcpy(query, NAME_ALREADY_USED, 0);
     while (1) {
       ret = send(client_desc, query + bytes_send, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
@@ -99,8 +94,18 @@ void*	client_routine(void *arg) {
     pthread_exit(NULL);
   }
 
+  fprintf(stderr, "New client %s connected\n", client_name);
+
   // In caso contrario aggiungo il client al database
   add_cl(client);
+
+
+  fprintf(stderr, "Numero dei clients: %d\n", nclients);
+  client_l aux = client_list;
+  while (aux != NULL) {
+    fprintf(stderr, "%s\n", aux->client_name);
+    aux = aux->next;
+  }
 
   // Mi metto in attesa di eventuali messaggi da parte di quest'ultimo
   while (1) {

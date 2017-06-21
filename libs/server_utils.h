@@ -14,13 +14,13 @@
 
 #define OFFLINE	0
 #define ONLINE 	1
+#define MAX_LEN_NAME    10
 
 typedef struct client_s {
   int     client_id;
   int     client_desc;
   int     client_status;
-  char    client_port[5];
-  char    client_name[11];
+  char    client_name[MAX_LEN_NAME];
   struct  client_s* next;
   struct  client_s* prev;
 } client_t;
@@ -34,6 +34,6 @@ client_l  last_client;
 int add_cl (client_l client);
 int remove_cl (int id);
 int send_cl (int sock_desc);
-int invalid_name(char* name);
+int valid_name(char* name);
 
 #endif

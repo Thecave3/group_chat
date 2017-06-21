@@ -17,16 +17,16 @@ client_l find_cl(int id) {
 	return aux;
 }
 
-int invalid_name(char* name) {
+int valid_name(char* name) {
 	if (sem_wait(&client_list_semaphore)) return -1;
 	client_l aux;
 	aux = client_list;
 	while (aux != NULL) {
-		if (aux->client_name == name) return 1;
+    if (strcmp(aux->client_name, name) == 0) return 0;
 		aux = aux->next;
 	}
 	if (sem_post(&client_list_semaphore)) return -1;
-	return 0;
+	return 1;
 }
 
 int add_cl(client_l client) {
@@ -34,11 +34,14 @@ int add_cl(client_l client) {
   client->client_id = id_clients;
   client->client_status = ONLINE;
   if (nclients == 0) {
-  	client_list = client;
+    client->next = NULL;
+    client->prev = NULL;
+    client_list = client;
     last_client = client;
   }
 	else {
 		client->prev = last_client;
+    client->next = NULL;
     last_client->next = client;
     last_client = client;
 
