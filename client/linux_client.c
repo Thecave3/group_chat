@@ -49,7 +49,7 @@ void* receiveMessage(void* arg) {
     if (ret == 0) continue; // Timeout scaduto
 
     // In questo momento (ret==1) quindi è stato ricevuto il messaggios
-    
+
     // Codice gestione lettura chat
 
     int bytes_read = 0;
@@ -187,7 +187,7 @@ void kill_handler() {
 void init_threads(int socket_desc) {
   int ret;
 
-  fprintf(stderr, "\nConnessione con il server avvenuta!\n", QUIT);
+  fprintf(stderr, "\nConnessione con il server avvenuta!\n");
 
   pthread_t chat_threads[2];
 
