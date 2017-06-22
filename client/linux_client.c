@@ -4,10 +4,25 @@
 volatile sig_atomic_t shouldStop = 0;
 volatile sig_atomic_t shouldWait = 0;
 volatile sig_atomic_t onChat = 0;
+int socket_desc;
 
 // Gestione CTRL-C
 void kill_handler() {
   shouldStop = 1;
+  char* close_command = QUIT;
+  size_t close_command_len = strlen(close_command);
+  int bytes_written = 0;
+  int ret;
+  while (1) {
+    ret = write(socket_desc,close_command+bytes_written,close_command_len);
+    if (ret==-1) {
+      if (errno == EINTR) {
+        fprintf(stderr,"Errore scrittura dati, ripeto\n");
+        continue;
+      }
+      ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
+    } else if ((bytes_written += ret) == close_command_len) break;
+  }
   printf("Chiusura connessione effettuata, bye bye\n");
   exit(EXIT_SUCCESS);
 }
@@ -52,7 +67,6 @@ void* receiveMessage(void* arg) {
     // In questo momento (ret==1) quindi è stato ricevuto il messaggio
 
     // Codice gestione lettura chat
-
     int bytes_read = 0;
 
     while (1) {
@@ -76,7 +90,7 @@ void* receiveMessage(void* arg) {
     if (strncmp(buf,already_used_alert,already_used_alert_len)==0) {
       printf("\n%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
-      kill_handler();
+      exit(EXIT_SUCCESS);
     }
 
     // Gestione richiesta connessione
@@ -105,7 +119,6 @@ void* receiveMessage(void* arg) {
       shouldStop = 1;
     } else {
       buf[bytes_read] = '\0';
-
       // Stampa messaggio
       printf("\n==> %s \n", buf);
       ret = fflush(stdout);
@@ -128,7 +141,7 @@ void* sendMessage(void* arg) {
 
 
   while (!shouldStop) {
-    printf("\n>> ");
+    printf(">> ");
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
@@ -208,7 +221,7 @@ void* sendMessage(void* arg) {
           onChat = 0;
         }else{
           shouldStop = 1;
-          kill_handler();
+          exit(EXIT_SUCCESS);
         }
       }
     }
@@ -220,7 +233,7 @@ void* sendMessage(void* arg) {
   pthread_exit(NULL);
 }
 
-void init_threads(int socket_desc) {
+void init_threads() {
   int ret;
 
   fprintf(stderr, "\nConnessione con il server avvenuta!\n");
@@ -252,7 +265,6 @@ void init_threads(int socket_desc) {
 // Effettua una connessione TCP con il server inviando il nome
 void connectTo(char* username) {
   int ret;
-  int socket_desc;
   struct sockaddr_in server_addr = {0};
 
   // Creazione socket
@@ -274,7 +286,7 @@ void connectTo(char* username) {
   ERROR_HELPER(ret,"Errore invio username");
 
   // Lancio inizializzazione shell
-  init_threads(socket_desc);
+  init_threads();
 }
 
 // Gestisce input errati da parte dell'utente all'inizio del programma
