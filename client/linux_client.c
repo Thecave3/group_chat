@@ -93,7 +93,7 @@ void* receiveMessage(void* arg) {
       printf("\n%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       exit(EXIT_SUCCESS);
-    }else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con se stessi
+    } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con se stessi
       printf("\n%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
       shouldWait = 0;
     } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
@@ -196,16 +196,16 @@ void* sendMessage(void* arg) {
           printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
           shouldSend = 0;
         }else{
+          /*
+          A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
+          l'utente che la ha istanziata deve rimanere in attesa e non può più inviare nulla
+          al server finchè non c'è una risposta
+          */
           printf("%sHai scritto il comando connect verso %s%s",KYEL,user,KNRM);
           printf("%sL'input è disabilitato fino alla risposta del server%s\n",KBLU,KNRM);
           shouldSend = 1;
           shouldWait = 1;
         }
-        /*
-        A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
-        l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
-        al server finchè non c'è una risposta
-        */
       } else {
         printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
         printf("%s\n",KNRM);
@@ -214,10 +214,10 @@ void* sendMessage(void* arg) {
     }
 
     if(shouldSend){
-      // Numero di bytes da mandare (senza string terminator '\0')
-      msg_len = strlen(buf);
       // Codice gestione invio dati server
       bytes_written = 0;
+      // Numero di bytes da mandare (senza string terminator '\0')
+      msg_len = strlen(buf);
 
       while (1) {
         ret = write(socket_desc,buf+bytes_written,msg_len);
@@ -229,6 +229,7 @@ void* sendMessage(void* arg) {
           ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
         } else if ((bytes_written += ret) == msg_len) break;
       }
+
       // È stato inviato il comando QUIT, bisogna chiudere la chat oppure il programma aggiornando shouldStop e onChat
       if (strncmp(buf,close_command,close_command_len)==0) {
         if (onChat) {
