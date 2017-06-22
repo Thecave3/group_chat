@@ -98,7 +98,7 @@ void* receiveMessage(void* arg) {
     }else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con se stessi
       printf("\n%sErrore, non puoi connetterti con te stesso\n%s",KRED,KNRM);
       shouldWait = 0;
-    } else if (strncmp(buf,request_command,request_command_len)==0) {// Gestione richiesta connessione
+    } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
       char res_buf[BUF_LEN];
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
@@ -132,10 +132,9 @@ void* receiveMessage(void* arg) {
     }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPremi ENTER per uscire.\n");
       shouldStop = 1;
-    } else {
+    } else { // Stampa messaggio
       buf[bytes_read] = '\0';
-      // Stampa messaggio
-      printf("\n==> %s \n", buf);
+      printf("\n==> %s <== \n\r", buf);
       ret = fflush(stdout);
       ERROR_HELPER(ret,"Errore fflush");
     }
@@ -155,8 +154,10 @@ void* sendMessage(void* arg) {
 
   int bytes_written;
   size_t msg_len;
+
+
+  printf(">> ");
   while (!shouldStop) {
-    printf(">> ");
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
       exit(EXIT_FAILURE);
@@ -243,8 +244,9 @@ void* sendMessage(void* arg) {
 
     while (shouldWait) {
       sleep(1);
-      //printf("SHOUDLWAIT %d\n",shouldWait );
     }
+    printf(">> ");
+    fflush(stdout);
   }
   pthread_exit(NULL);
 }
