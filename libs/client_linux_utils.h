@@ -20,6 +20,9 @@
 #define STON "STON\0"
 #define STOF "STOF\0"
 
+#define YES "yes\n"
+#define NO "no\n"
+
 
 #define EXIT_SUCCESS 0
 
