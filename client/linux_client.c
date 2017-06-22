@@ -95,6 +95,7 @@ void* receiveMessage(void* arg) {
 
     // Gestione richiesta connessione
     if (strncmp(buf,request_command,request_command_len)==0) {
+      shouldWait = 1;
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
       if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
@@ -109,6 +110,19 @@ void* receiveMessage(void* arg) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
           exit(EXIT_FAILURE);
         }
+      }
+
+      if(strncmp(buf,"yes",strlen("yes")) == 0) {
+        // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
+
+
+
+        onChat = 1;
+      }else{
+
+        // Nessuna chat, il client invia una risposta di no al server e torna la shell
+
+        onChat = 0;
       }
       shouldWait = 0;
     }
