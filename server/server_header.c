@@ -145,23 +145,10 @@ void*	client_routine(void *arg) {
     query_size = sizeof(CONNECT)-1;
 
     if (strncmp(CONNECT, data, query_size)== 0) {
+
       data[bytes_read - 1] = '\0';
       char* request_name = data + query_size;
-      if (find_id_by_name(request_name) == *client_id) {
-        query_size = strlen(CONNECT_WITH_YOURSELF);
-        char* query = malloc(sizeof(char)*query_size);
-        memcpy(query, CONNECT_WITH_YOURSELF, query_size);
-        while (bytes_send < query_size) {
-          ret = send(client_desc, query + bytes_send, 1, 0);
-          if (ret == -1 && errno == EINTR) continue;
-          if (ret == -1) {
-            remove_cl(*client_id);
-            pthread_exit(NULL);
-          }
-          bytes_send++;
-        }
-        continue;
-      }
+
       client_l aux = find_cl_by_name(request_name);
       if (aux == NULL) {
         query_size = strlen(CLIENT_NOT_EXIST);
@@ -178,6 +165,23 @@ void*	client_routine(void *arg) {
         }
         continue;
       }
+
+      if (aux->client_id == *client_id) {
+        query_size = strlen(CONNECT_WITH_YOURSELF);
+        char* query = malloc(sizeof(char)*query_size);
+        memcpy(query, CONNECT_WITH_YOURSELF, query_size);
+        while (bytes_send < query_size) {
+          ret = send(client_desc, query + bytes_send, 1, 0);
+          if (ret == -1 && errno == EINTR) continue;
+          if (ret == -1) {
+            remove_cl(*client_id);
+            pthread_exit(NULL);
+          }
+          bytes_send++;
+        }
+        continue;
+      }
+
       fprintf(stderr, "Client %s request connection with %s\n", client_name, aux->client_name);
       bytes_send = 0;
       query_size = strlen(CONNECT);
