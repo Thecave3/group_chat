@@ -52,7 +52,6 @@ void* receiveMessage(void* arg) {
   int ret;
 
   while (!shouldStop) {
-
     // Popolo i valori della struttura del timeout in modo da fare il check ogni 1.5 secondi in modo da lasciare la CPU il più libera possibile
     timeout.tv_sec  = 1;
     timeout.tv_usec = 500000;
@@ -71,7 +70,6 @@ void* receiveMessage(void* arg) {
     if (ret == 0) continue; // Timeout scaduto
 
     // In questo momento (ret==1) quindi è stato ricevuto il messaggio
-
     bytes_read = 0;
 
     while (1) {
@@ -96,28 +94,27 @@ void* receiveMessage(void* arg) {
       shouldStop = 1;
       exit(EXIT_SUCCESS);
     }else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con se stessi
-      printf("\n%sErrore, non puoi connetterti con te stesso\n%s",KRED,KNRM);
+      printf("\n%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
       shouldWait = 0;
     } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
-      char res_buf[BUF_LEN];
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
-      if (fgets(res_buf, sizeof(res_buf), stdin) != (char*)res_buf) {
+      if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
       }
 
-      while (!(strncmp(res_buf,YES,strlen(YES)) == 0 || strncmp(res_buf,NO,strlen(NO)) == 0)) {
+      while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0)) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
         printf(">> ");
-        if (fgets(res_buf, sizeof(res_buf), stdin) != (char*)res_buf) {
+        if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
           exit(EXIT_FAILURE);
         }
       }
-      if(strncmp(res_buf,YES,strlen(YES)) == 0) {
+      if(strncmp(buf,YES,strlen(YES)) == 0) {
         // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
         printf("inizia la chat\n");
 
@@ -154,9 +151,8 @@ void* sendMessage(void* arg) {
 
   int bytes_written;
   size_t msg_len;
-
-
   printf(">> ");
+
   while (!shouldStop) {
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
@@ -197,7 +193,7 @@ void* sendMessage(void* arg) {
           printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
           shouldSend = 0;
         }else{
-          printf("%sHai scritto il comando connect verso %s%s\n",KYEL,user,KNRM);
+          printf("%sHai scritto il comando connect verso %s%s",KYEL,user,KNRM);
           printf("%sL'input è disabilitato fino alla risposta del server%s\n",KBLU,KNRM);
           shouldSend = 1;
           shouldWait = 1;
@@ -231,7 +227,6 @@ void* sendMessage(void* arg) {
         } else if ((bytes_written += ret) == msg_len) break;
       }
       // È stato inviato il comando QUIT, bisogna chiudere la chat oppure il programma aggiornando shouldStop e onChat
-      // (note that we subtract 1 to skip the message delimiter '\n')
       if (strncmp(buf,close_command,close_command_len)==0) {
         if (onChat) {
           onChat = 0;
@@ -245,6 +240,7 @@ void* sendMessage(void* arg) {
     while (shouldWait) {
       sleep(1);
     }
+
     printf(">> ");
     fflush(stdout);
   }
@@ -254,7 +250,7 @@ void* sendMessage(void* arg) {
 void init_threads() {
   int ret;
 
-  fprintf(stderr, "\nConnessione con il server avvenuta!\n");
+  printf("Connessione con il server avvenuta!\n");
 
   pthread_t chat_threads[2];
 
@@ -309,7 +305,7 @@ void connectTo(char* username) {
 
 // Gestisce input errati da parte dell'utente all'inizio del programma
 void syntaxError(char* prog_name) {
-  fprintf(stderr, "Uso del programma:\n\n");
+  fprintf(stderr, "Uso del programma:\n");
   fprintf(stderr, "       %s <nome_utente>\n", prog_name);
   fprintf(stderr, "Nota che <nome_utente> deve essere al massimo di %d caratteri\n", MAX_LEN_NAME);
   exit(EXIT_FAILURE);
