@@ -75,7 +75,7 @@ void* receiveMessage(void* arg) {
 
     while (1) {
       ret = read(socket_desc,buf+bytes_read,1);
-      printf("%s\n",buf);
+    //  printf("%s\n",buf);
       if (ret == -1) {
         if (errno == EINTR) {
           continue;
@@ -100,23 +100,25 @@ void* receiveMessage(void* arg) {
       shouldWait = 0;
     } else if (strncmp(buf,request_command,request_command_len)==0) {// Gestione richiesta connessione
       shouldWait = 1;
+      char res_buf[BUF_LEN];
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
-      if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+      if (fgets(res_buf, sizeof(res_buf), stdin) != (char*)res_buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
       }
-      while (strncmp(buf,"yes",strlen("yes")) == 0 || strncmp(buf,"no",strlen("no")) == 0) {
+      printf("BUF : %send DOPO FGETS\n",res_buf);
+      while (strncmp(res_buf,YES,strlen(YES)) == 0 || strncmp(res_buf,NO,strlen(NO)) == 0) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+        printf("BUF NELL'ERRORE:%send\n",res_buf );
         printf(">> ");
-        if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+        if (fgets(res_buf, sizeof(res_buf), stdin) != (char*)res_buf) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
           exit(EXIT_FAILURE);
         }
       }
-
-      if(strncmp(buf,"yes",strlen("yes")) == 0) {
+      if(strncmp(res_buf,YES,strlen(YES)) == 0) {
         // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
 
 
