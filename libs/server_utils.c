@@ -5,18 +5,22 @@
 
 int	id_clients;
 
-int set_status(int id) {
+int set_status(int id, int status) {
 	if (sem_wait(&client_list_semaphore)) return -1;
 	client_l aux;
+  int ret = 0;
 	aux = client_list;
-	while (aux != NULL) {
-		if (aux->client_id == id) {
-      aux->client_status = OFFLINE;
-    }
-		aux = aux->next;
-	}
+  if (status != 1 || status != 0) {
+	  while (aux != NULL) {
+		  if (aux->client_id == id) {
+        aux->client_status = status;
+        ret = 1;
+      }
+		  aux = aux->next;
+	  }
+  }
 	if (sem_post(&client_list_semaphore)) return -1;
-  return 1;
+  return ret;
 }
 
 client_l find_cl_by_name(char* name) {
@@ -147,19 +151,17 @@ int send_cl(int sock_desc) {
   list_len = 0;
 	bytes_send = 0;
 
-  fprintf(stderr, "The list of clients connected is:\n");
-	while (aux != NULL) {
+  while (aux != NULL) {
 		if (aux->client_status == ONLINE) {
 			memset(data_buffer, 0, MAX_LEN_NAME);
 			strcat(data_buffer, aux->client_name);
-      fprintf(stderr, "%d. %s\n",aux->client_id, data_buffer);
 			strcat(data_buffer,"\n\r");
 			data_buffer_len = strlen(data_buffer);
 			while (bytes_send < data_buffer_len) {
-				ret = send(sock_desc, data_buffer + bytes_send, data_buffer_len - bytes_send, 0);
+				ret = send(sock_desc, data_buffer + bytes_send, 1, 0);
 				if (ret == -1 && errno == EINTR) continue;
 				if (ret == -1) return -1;
-				bytes_send += ret;
+				bytes_send ++;
 			}
 			list_len += bytes_send;
 			bytes_send = 0;
