@@ -137,6 +137,7 @@ void*	client_routine(void *arg) {
     }
 
     if (strncmp(data, LIST, sizeof(LIST)) == 0) {
+      fprintf(stderr, "Client %s requests client list\n", client_name);
       send_cl(client->client_desc);
       continue;
     }
