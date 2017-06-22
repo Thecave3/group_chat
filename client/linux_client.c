@@ -161,21 +161,23 @@ void* sendMessage(void* arg) {
       shouldSend = 1;
     } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
       char user[MAX_LEN_NAME];
-      if(strlen(buf)==strlen(CONNECT)){
+      printf("%lu == %lu\n",strlen(buf),strlen(CONNECT));
+      if(0){
         printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
+        shouldSend = 0;
       }else{
         for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
           user[i]=buf[strlen(CONNECT)+j];
         }
         printf("Hai scritto il comando connect verso %s\n",user);
         shouldSend = 1;
+        //shouldWait = 1;
       }
       /*
       A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
       l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
       al server finchè non c'è una risposta
       */
-      shouldWait = 1;
     } else {
       printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
       printf("%s\n",KNRM);
