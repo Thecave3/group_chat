@@ -160,7 +160,27 @@ void*	client_routine(void *arg) {
           }
           bytes_send++;
         }
+        continue;
       }
+      client_l aux = find_cl_by_name(request_name);
+      fprintf(stderr, "Client %s request connection with %s\n", client_name, aux->client_name);
+      bytes_send = 0;
+      query_size = strlen(CONNECT);
+      char* query = malloc(sizeof(char)*(query_size + MAX_LEN_NAME));
+      memcpy(query, CONNECT, query_size);
+      strncat(query, client_name, MAX_LEN_NAME);
+      strncat(query, "\n", 1);
+      while (1) {
+        ret = send(aux->client_desc, query + bytes_send, 1, 0);
+        if (ret == -1 && errno == EINTR) continue;
+        if (ret == -1) {
+          remove_cl(*client_id);
+          pthread_exit(NULL);
+        }
+        bytes_send++;
+        if (query[bytes_send-1] == '\n') break;
+      }
+      fprintf(stderr, "Message send to pietro (length: %d)\n", bytes_send);
     }
   }
   pthread_exit(NULL);
