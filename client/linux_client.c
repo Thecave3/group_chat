@@ -109,6 +109,8 @@ void* receiveMessage(void* arg) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
         printf(">> ");
+        ret = fflush(stdout);
+        ERROR_HELPER(ret,"Errore fflush");
         if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
           exit(EXIT_FAILURE);
@@ -152,7 +154,8 @@ void* sendMessage(void* arg) {
   int bytes_written;
   size_t msg_len;
   printf(">> ");
-
+  ret = fflush(stdout);
+  ERROR_HELPER(ret,"Errore fflush");
   while (!shouldStop) {
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
