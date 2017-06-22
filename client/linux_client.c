@@ -108,10 +108,9 @@ void* receiveMessage(void* arg) {
         exit(EXIT_FAILURE);
       }
       printf("BUF : %send DOPO FGETS\n",res_buf);
-      while (strncmp(res_buf,YES,strlen(YES)) == 0 || strncmp(res_buf,NO,strlen(NO)) == 0) {
+      while (!(strncmp(res_buf,YES,strlen(YES)) == 0 || strncmp(res_buf,NO,strlen(NO)) == 0)) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
-        printf("BUF NELL'ERRORE:%send\n",res_buf );
         printf(">> ");
         if (fgets(res_buf, sizeof(res_buf), stdin) != (char*)res_buf) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
@@ -120,13 +119,12 @@ void* receiveMessage(void* arg) {
       }
       if(strncmp(res_buf,YES,strlen(YES)) == 0) {
         // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
-
+        printf("inizia la chat\n");
 
         onChat = 1;
       }else{
-
         // Nessuna chat, il client invia una risposta di no al server e torna la shell
-
+        printf("niente chat\n");
         onChat = 0;
       }
       shouldWait = 0;
