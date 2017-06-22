@@ -51,6 +51,7 @@ void*	client_routine(void *arg) {
   int       ret;
   int       bytes_read;
   int       bytes_send;
+  int       query_size;
   int       client_desc = client->client_desc;
   int*      client_id   = &client->client_id;
   char*     client_name = client->client_name;
@@ -64,8 +65,14 @@ void*	client_routine(void *arg) {
   while (bytes_read < MAX_LEN_NAME) {
     ret = recv(client_desc, data + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
-    if (ret == -1) pthread_exit(NULL);
-    if (ret == 0) pthread_exit(NULL);
+    if (ret == -1) {
+      remove_cl(*client_id);
+      pthread_exit(NULL);
+    }
+    if (ret == 0) {
+      remove_cl(*client_id);
+      pthread_exit(NULL);
+    }
     bytes_read++;
     if (data[bytes_read-1] == '\n' ||
 	      data[bytes_read-1] == '\r' ||
@@ -80,14 +87,17 @@ void*	client_routine(void *arg) {
 
   // Verifico se esiste gà un client con tale nome
   if (valid_name(client_name) <= 0) {
-    int query_size = strlen(NAME_ALREADY_USED);
+    query_size = strlen(NAME_ALREADY_USED);
     char* query = malloc(sizeof(char)*query_size);
     fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
     memcpy(query, NAME_ALREADY_USED, query_size);
     while (bytes_send < query_size) {
       ret = send(client_desc, query + bytes_send, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
-      if (ret == -1) pthread_exit(NULL);
+      if (ret == -1) {
+        remove_cl(*client_id);
+        pthread_exit(NULL);
+      }
       bytes_send++;
     }
     pthread_exit(NULL);
@@ -100,11 +110,17 @@ void*	client_routine(void *arg) {
   while (1) {
     bytes_read = 0;
     memset(data, 0, MAX_DATA_LEN);
-    while (1) {
+    while (bytes_read < MAX_DATA_LEN) {
       ret = recv(client_desc, data + bytes_read, 1, 0);
       if (ret == -1 && errno == EINTR) continue;
-      if (ret == -1) pthread_exit(NULL);
-      if (ret == 0) pthread_exit(NULL);
+      if (ret == -1) {
+        remove_cl(*client_id);
+        pthread_exit(NULL);
+      }
+      if (ret == 0) {
+        remove_cl(*client_id);
+        pthread_exit(NULL);
+      }
       bytes_read++;
       if (data[bytes_read-1] == '\n' ||
 	        data[bytes_read-1] == '\r' ||
@@ -112,17 +128,28 @@ void*	client_routine(void *arg) {
         break;
     }
 
-    fprintf(stderr, "%s\n", data);
-
     data[bytes_read-1] = '\n';
 
-    if (strcmp(data, QUIT) == 0) {
+    if (strncmp(data, QUIT, sizeof(QUIT)) == 0) {
       fprintf(stderr, "Client %s disconnected\n", client_name);
       remove_cl(*client_id);
       pthread_exit(NULL);
     }
 
-    if (strcmp(data, LIST) == 0) send_cl(client->client_desc);
+    if (strncmp(data, LIST, sizeof(LIST)) == 0) {
+      send_cl(client->client_desc);
+      continue;
+    }
+
+    query_size = sizeof(CONNECT)-1;
+
+    if (strncmp(CONNECT, data, query_size)== 0) {
+      data[bytes_read - 1] = '\0';
+      if (find_id_by_name(data + query_size) == *client_id) {
+        fprintf(stderr, "You can't connect with yourelf!");
+      }
+    }
+
   }
   pthread_exit(NULL);
 }

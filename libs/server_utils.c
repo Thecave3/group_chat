@@ -17,12 +17,25 @@ client_l find_cl(int id) {
 	return aux;
 }
 
+int find_id_by_name(char* name) {
+	if (sem_wait(&client_list_semaphore)) return -1;
+	client_l aux;
+	aux = client_list;
+	while (aux != NULL) {
+    int client_name_size = sizeof(aux->client_name);
+		if (strncmp(aux->client_name, name, client_name_size) == 0) break;
+		aux = aux->next;
+	}
+	if (sem_post(&client_list_semaphore)) return -1;
+	return aux->client_id;
+}
+
 int valid_name(char* name) {
   client_l aux;
   int ret = 1;
 	aux = client_list;
 	while (aux != NULL) {
-    if (strcmp(aux->client_name, name) == 0) {
+    if (strncmp(aux->client_name, name, MAX_LEN_NAME) == 0) {
       ret = 0;
       break;
     }
@@ -96,7 +109,7 @@ int send_cl(int sock_desc) {
 	int       list_len;
 	int       bytes_send;
 	int       data_buffer_len;
-	char      data_buffer[DATA_BUFFER_LEN];
+	char      data_buffer[MAX_LEN_NAME];
 	client_l  aux = client_list;
 
   list_len = 0;
@@ -104,8 +117,7 @@ int send_cl(int sock_desc) {
 
 	while (aux != NULL) {
 		if (aux->client_status == ONLINE) {
-			fprintf(stderr, "%s\n", aux->client_name);
-			memset(data_buffer, 0, DATA_BUFFER_LEN);
+			memset(data_buffer, 0, MAX_LEN_NAME);
 			strcat(data_buffer, aux->client_name);
 			strcat(data_buffer,"\n\r");
 			data_buffer_len = strlen(data_buffer);

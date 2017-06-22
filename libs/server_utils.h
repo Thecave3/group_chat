@@ -36,5 +36,6 @@ int add_cl (client_l client);
 int remove_cl (int id);
 int send_cl (int sock_desc);
 int valid_name(char* name);
+int find_id_by_name(char* name);
 
 #endif
