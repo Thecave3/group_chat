@@ -9,7 +9,6 @@
 #include <fcntl.h>
 #include <semaphore.h>
 
-
 #include "colors.h"
 #include "server_protocol.h"
 #include "common.h"
@@ -43,7 +42,7 @@ void display_commands() {
   printf(">> Mostra la lista degli utenti connessi: ");
   printf("%s%s%s\n",KGRN,LIST,KNRM);
   printf(">> Richiesta connessione verso un utente: ");
-  printf("%s%s NOME_UTENTE%s\n\n",KGRN,CONNECT,KNRM);
+  printf("%s%sNOME_UTENTE%s\n\n",KGRN,CONNECT,KNRM);
   printf(">> Disconnessione dal server ed uscita dal programma: ");
   printf("%s%s%s\n",KGRN,QUIT,KNRM);
   printf(">> Pulisci schermo: ");

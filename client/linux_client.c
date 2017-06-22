@@ -3,7 +3,7 @@
 
 volatile sig_atomic_t shouldStop = 0;
 volatile sig_atomic_t shouldWait = 0;
-
+volatile sig_atomic_t onChat = 0;
 
 // Gestione CTRL-C
 void kill_handler() {
@@ -83,7 +83,6 @@ void* receiveMessage(void* arg) {
     if (strncmp(buf,request_command,request_command_len)==0) {
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
-      shouldWait = 1;
       if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
@@ -123,17 +122,17 @@ void* sendMessage(void* arg) {
   int ret;
   char buf[BUF_LEN];
 
+  char* close_command = QUIT;
+  size_t close_command_len = strlen(close_command);
   volatile sig_atomic_t shouldSend = 0;
 
 
   while (!shouldStop) {
     printf("\n>> ");
-    if(!shouldWait){
-      if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
+    if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
       }
-    }
     strcat(buf,"\n");
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
@@ -141,38 +140,39 @@ void* sendMessage(void* arg) {
       break;
     }
 
-    // Analizzo l'input utente interpretando i comandi
-    if(strlen(buf)<MIN_CMD_LEN){
-      printf("%sComando non riconosciuto, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
-      printf("%s\n",KNRM);
-      shouldSend = 0;
-    } else if (strncmp(buf,CLEAR,strlen(CLEAR))==0) {
-      clear_screen();
-      shouldSend = 0;
-    } else if (strncmp(buf,HELP,strlen(HELP))==0) {
-      display_commands();
-      shouldSend = 0;
-    } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
-      printf("Chiusura connessione in corso...\n");
-      shouldSend = 1;
-    } else if (strncmp(buf,LIST,strlen(LIST))==0) {
-      printf("Lista utenti connessi:\n");
-      strncpy(buf,"list\n",strlen(buf));
-      shouldSend = 1;
-    } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
-      char user[MAX_LEN_NAME];
-      printf("%lu == %lu\n",strlen(buf),strlen(CONNECT));
-      if(0){
-        printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
+    if(!onChat){
+      // Analizzo l'input utente interpretando i comandi
+      if(strlen(buf)<MIN_CMD_LEN){
+        printf("%sComando non riconosciuto, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
+        printf("%s\n",KNRM);
         shouldSend = 0;
-      }else{
-        for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
-          user[i]=buf[strlen(CONNECT)+j];
-        }
-        printf("Hai scritto il comando connect verso %s\n",user);
+      } else if (strncmp(buf,CLEAR,strlen(CLEAR))==0) {
+        clear_screen();
+        shouldSend = 0;
+      } else if (strncmp(buf,HELP,strlen(HELP))==0) {
+        display_commands();
+        shouldSend = 0;
+      } else if (strncmp(buf,QUIT,strlen(QUIT))==0){
+        printf("Chiusura connessione in corso...\n");
         shouldSend = 1;
-        //shouldWait = 1;
-      }
+      } else if (strncmp(buf,LIST,strlen(LIST))==0) {
+        printf("Lista utenti connessi:\n");
+        strncpy(buf,"list\n",strlen(buf));
+        shouldSend = 1;
+      } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
+        char user[MAX_LEN_NAME];
+        for(int i =0; i<MAX_LEN_NAME && i<strlen(buf);i++){
+          user[i]=buf[strlen(CONNECT)+i];
+        }
+        if(strlen(user) <= 1 || strlen(user) > MAX_LEN_NAME){
+          printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
+          shouldSend = 0;
+        }else{
+          printf("%sHai scritto il comando connect verso %s%s\n",KYEL,user,KNRM);
+          printf("%sL'input è disabilitato fino alla risposta del server%s\n",KBLU,KNRM);
+          shouldSend = 1;
+          shouldWait = 1;
+        }
       /*
       A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
       l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
@@ -183,6 +183,7 @@ void* sendMessage(void* arg) {
       printf("%s\n",KNRM);
       shouldSend = 0;
     }
+  }
 
     if(shouldSend){
       // Numero di bytes da mandare (senza string terminator '\0')
@@ -200,12 +201,20 @@ void* sendMessage(void* arg) {
           ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
         } else if ((bytes_written += ret) == msg_len) break;
       }
-      // È stato inviato il comando QUIT, bisogna chiudere il programma aggiornando shouldStop
+      // È stato inviato il comando QUIT, bisogna chiudere la chat oppure il programma aggiornando shouldStop e onChat
       // (note that we subtract 1 to skip the message delimiter '\n')
-      if (msg_len - 1 == strlen(QUIT) && !memcmp(buf, QUIT, strlen(QUIT))) {
-        shouldStop = 1;
-        kill_handler();
+      if (strncmp(buf,close_command,close_command_len)==0) {
+        if (onChat) {
+          onChat = 0;
+        }else{
+          shouldStop = 1;
+          kill_handler();
+        }
       }
+    }
+
+    while (shouldWait) {
+      sleep(1000);
     }
   }
   pthread_exit(NULL);
