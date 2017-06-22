@@ -151,6 +151,7 @@ void*	client_routine(void *arg) {
 
       client_l aux = find_cl_by_name(request_name);
       if (aux == NULL) {
+        fprintf(stderr, "Client %s connection error: CLIENT_NOT_EXIST\n", client_name);
         query_size = strlen(CLIENT_NOT_EXIST);
         char* query = malloc(sizeof(char)*query_size);
         memcpy(query, CLIENT_NOT_EXIST, query_size);
@@ -167,6 +168,7 @@ void*	client_routine(void *arg) {
       }
 
       if (aux->client_id == *client_id) {
+        fprintf(stderr, "Client %s connection error: CLIENT_WITH_YOURSELF\n", client_name);
         query_size = strlen(CONNECT_WITH_YOURSELF);
         char* query = malloc(sizeof(char)*query_size);
         memcpy(query, CONNECT_WITH_YOURSELF, query_size);
