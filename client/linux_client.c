@@ -90,21 +90,14 @@ void* receiveMessage(void* arg) {
       bytes_read++;
     }
 
-    // Gestione name already used
-    if (strncmp(buf,already_used_alert,already_used_alert_len)==0) {
+    if (strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
       printf("\n%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       exit(EXIT_SUCCESS);
-    }
-
-    // Gestione connessione con se stessi
-    if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) {
-      printf("\n%sErrore, non puoi connetterti con te stesso\n",KRED);
+    }else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con se stessi
+      printf("\n%sErrore, non puoi connetterti con te stesso\n%s",KRED,KNRM);
       shouldWait = 0;
-    }
-
-    // Gestione richiesta connessione
-    if (strncmp(buf,request_command,request_command_len)==0) {
+    } else if (strncmp(buf,request_command,request_command_len)==0) {// Gestione richiesta connessione
       shouldWait = 1;
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
@@ -134,10 +127,7 @@ void* receiveMessage(void* arg) {
         onChat = 0;
       }
       shouldWait = 0;
-    }
-
-    // Gestione chiusura
-    if (strncmp(buf,close_command,close_command_len)==0) {
+    }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPremi ENTER per uscire.\n");
       shouldStop = 1;
     } else {
