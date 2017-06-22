@@ -2,9 +2,10 @@
 
 
 volatile sig_atomic_t shouldStop = 0;
+volatile sig_atomic_t shouldSend = 0;
 volatile sig_atomic_t shouldWait = 0;
 volatile sig_atomic_t onChat = 0;
-int socket_desc;
+long int socket_desc;
 
 // Gestione CTRL-C
 void kill_handler() {
@@ -75,7 +76,6 @@ void* receiveMessage(void* arg) {
 
     while (1) {
       ret = read(socket_desc,buf+bytes_read,1);
-    //  printf("%s\n",buf);
       if (ret == -1) {
         if (errno == EINTR) {
           continue;
@@ -107,7 +107,7 @@ void* receiveMessage(void* arg) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
       }
-      printf("BUF : %send DOPO FGETS\n",res_buf);
+
       while (!(strncmp(res_buf,YES,strlen(YES)) == 0 || strncmp(res_buf,NO,strlen(NO)) == 0)) {
         printf("%sErrore%s\n",KRED,KNRM);
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
@@ -128,6 +128,7 @@ void* receiveMessage(void* arg) {
         onChat = 0;
       }
       shouldWait = 0;
+      shouldSend = 1;
     }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPremi ENTER per uscire.\n");
       shouldStop = 1;
@@ -151,16 +152,15 @@ void* sendMessage(void* arg) {
 
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
-  volatile sig_atomic_t shouldSend = 0;
 
   int bytes_written;
   size_t msg_len;
   while (!shouldStop) {
-    //printf(">> ");
+    printf(">> ");
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
-        fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
-        exit(EXIT_FAILURE);
-      }
+      fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
+      exit(EXIT_FAILURE);
+    }
     strcat(buf,"\n");
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
@@ -201,17 +201,17 @@ void* sendMessage(void* arg) {
           shouldSend = 1;
           shouldWait = 1;
         }
-      /*
-      A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
-      l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
-      al server finchè non c'è una risposta
-      */
-    } else {
-      printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
-      printf("%s\n",KNRM);
-      shouldSend = 0;
+        /*
+        A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
+        l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
+        al server finchè non c'è una risposta
+        */
+      } else {
+        printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
+        printf("%s\n",KNRM);
+        shouldSend = 0;
+      }
     }
-  }
 
     if(shouldSend){
       // Numero di bytes da mandare (senza string terminator '\0')
@@ -242,7 +242,8 @@ void* sendMessage(void* arg) {
     }
 
     while (shouldWait) {
-      sleep(1000);
+      sleep(1);
+      //printf("SHOUDLWAIT %d\n",shouldWait );
     }
   }
   pthread_exit(NULL);
