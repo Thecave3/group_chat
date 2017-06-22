@@ -22,6 +22,7 @@
 #define QUIT            	    "quit\n"
 #define NAME_ALREADY_USED	    "name_used\n"
 #define CONNECT_WITH_YOURSELF "connect_with_yourself\n"
+#define CLIENT_NOT_EXIST      "client_not_exist"
 
 // Stati del client
 #define OFFLINE   0

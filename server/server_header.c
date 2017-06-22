@@ -163,6 +163,21 @@ void*	client_routine(void *arg) {
         continue;
       }
       client_l aux = find_cl_by_name(request_name);
+      if (aux == NULL) {
+        query_size = strlen(CLIENT_NOT_EXIST);
+        char* query = malloc(sizeof(char)*query_size);
+        memcpy(query, CLIENT_NOT_EXIST, query_size);
+        while (bytes_send < query_size) {
+          ret = send(client_desc, query + bytes_send, 1, 0);
+          if (ret == -1 && errno == EINTR) continue;
+          if (ret == -1) {
+            remove_cl(*client_id);
+            pthread_exit(NULL);
+          }
+          bytes_send++;
+        }
+        continue;
+      }
       fprintf(stderr, "Client %s request connection with %s\n", client_name, aux->client_name);
       bytes_send = 0;
       query_size = strlen(CONNECT);

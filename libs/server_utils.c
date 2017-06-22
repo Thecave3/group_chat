@@ -22,14 +22,19 @@ int set_status(int id) {
 client_l find_cl_by_name(char* name) {
 	if (sem_wait(&client_list_semaphore)) return NULL;
 	client_l aux;
+  int cnt = 0;
 	aux = client_list;
 	while (aux != NULL) {
     int client_name_size = sizeof(aux->client_name);
-		if (strncmp(aux->client_name, name, client_name_size) == 0) break;
+		if (strncmp(aux->client_name, name, client_name_size) == 0) {
+      cnt++;
+      break;
+    }
 		aux = aux->next;
 	}
 	if (sem_post(&client_list_semaphore)) return NULL;
-	return aux;
+  if (cnt == 0) return NULL;
+  return aux;
 }
 
 client_l find_cl(int id) {
