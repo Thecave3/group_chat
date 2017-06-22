@@ -149,7 +149,6 @@ void*	client_routine(void *arg) {
       if (find_id_by_name(request_name) == *client_id) {
         query_size = strlen(CONNECT_WITH_YOURSELF);
         char* query = malloc(sizeof(char)*query_size);
-        fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
         memcpy(query, CONNECT_WITH_YOURSELF, query_size);
         while (bytes_send < query_size) {
           ret = send(client_desc, query + bytes_send, 1, 0);

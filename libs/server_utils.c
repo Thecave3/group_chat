@@ -146,6 +146,7 @@ int send_cl(int sock_desc) {
 		if (aux->client_status == ONLINE) {
 			memset(data_buffer, 0, MAX_LEN_NAME);
 			strcat(data_buffer, aux->client_name);
+      fprintf(stderr, "%s\n", data_buffer);
 			strcat(data_buffer,"\n\r");
 			data_buffer_len = strlen(data_buffer);
 			while (bytes_send < data_buffer_len) {
