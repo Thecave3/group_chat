@@ -146,10 +146,21 @@ void*	client_routine(void *arg) {
     if (strncmp(CONNECT, data, query_size)== 0) {
       data[bytes_read - 1] = '\0';
       if (find_id_by_name(data + query_size) == *client_id) {
-        fprintf(stderr, "You can't connect with yourelf!");
+        query_size = strlen(CONNECT_WITH_YOURSELF);
+        char* query = malloc(sizeof(char)*query_size);
+        fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
+        memcpy(query, CONNECT_WITH_YOURSELF, query_size);
+        while (bytes_send < query_size) {
+          ret = send(client_desc, query + bytes_send, 1, 0);
+          if (ret == -1 && errno == EINTR) continue;
+          if (ret == -1) {
+            remove_cl(*client_id);
+            pthread_exit(NULL);
+          }
+          bytes_send++;
+        }
       }
     }
-
   }
   pthread_exit(NULL);
 }

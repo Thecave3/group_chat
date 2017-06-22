@@ -17,10 +17,11 @@
 // Lunghezza massima del nome del client
 #define MAX_LEN_NAME    10
 
-#define CONNECT         	"connect "
-#define LIST              "list\n"
-#define QUIT            	"quit\n"
-#define NAME_ALREADY_USED	"name_used\n"
+#define CONNECT         	    "connect "
+#define LIST                  "list\n"
+#define QUIT            	    "quit\n"
+#define NAME_ALREADY_USED	    "name_used\n"
+#define CONNECT_WITH_YOURSELF "connect_with_yourself\n"
 
 // Stati del client
 #define OFFLINE   0
