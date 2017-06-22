@@ -23,6 +23,8 @@
 #define NAME_ALREADY_USED	    "name_used\n"
 #define CONNECT_WITH_YOURSELF "connect_with_yourself\n"
 #define CLIENT_NOT_EXIST      "client_not_exist"
+#define YES "yes\n"
+#define NO "no\n"
 
 // Stati del client
 #define OFFLINE   0

@@ -20,10 +20,6 @@
 #define STON "STON\0"
 #define STOF "STOF\0"
 
-#define YES "yes\n"
-#define NO "no\n"
-
-
 #define EXIT_SUCCESS 0
 
 #define GENERIC_ERROR_HELPER(cond, errCode, msg) do {               \
