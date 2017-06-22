@@ -154,14 +154,15 @@ int send_cl(int sock_desc) {
   while (aux != NULL) {
 		if (aux->client_status == ONLINE) {
 			memset(data_buffer, 0, MAX_LEN_NAME);
-			strcat(data_buffer, aux->client_name);
-			strcat(data_buffer,"\n\r");
+			strncpy(data_buffer, aux->client_name, MAX_LEN_NAME);
+			strncat(data_buffer,"\n",1);
 			data_buffer_len = strlen(data_buffer);
 			while (bytes_send < data_buffer_len) {
 				ret = send(sock_desc, data_buffer + bytes_send, 1, 0);
 				if (ret == -1 && errno == EINTR) continue;
 				if (ret == -1) return -1;
 				bytes_send ++;
+        fprintf(stderr, "%c", data_buffer[bytes_send-1]);
 			}
 			list_len += bytes_send;
 			bytes_send = 0;

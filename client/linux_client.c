@@ -74,7 +74,6 @@ void* receiveMessage(void* arg) {
 
     while (1) {
       ret = read(socket_desc,buf+bytes_read,1);
-      printf("stampo dopo read %send",buf);
       if (ret == -1) {
         if (errno == EINTR) {
           continue;
