@@ -32,10 +32,12 @@ void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
-  char* request_command = CONNECT ;
+  char* request_command = CONNECT;
   size_t request_command_len = strlen(request_command);
-  char* already_used_alert = NAME_ALREADY_USED ;
+  char* already_used_alert = NAME_ALREADY_USED;
   size_t already_used_alert_len = strlen(already_used_alert);
+  char* connect_with_yourself= CONNECT_WITH_YOURSELF;
+  size_t connect_with_yourself_len = strlen(connect_with_yourself);
 
   // Serve settare un intervallo per evitare di intasare la CPU con controlli
   struct timeval timeout;
@@ -44,8 +46,11 @@ void* receiveMessage(void* arg) {
 
   char buf[BUF_LEN];
 
+  // Codice gestione lettura chat
+  int bytes_read;
+  int ret;
+
   while (!shouldStop) {
-    int ret;
 
     // Popolo i valori della struttura del timeout in modo da fare il check ogni 1.5 secondi in modo da lasciare la CPU il più libera possibile
     timeout.tv_sec  = 1;
@@ -66,8 +71,7 @@ void* receiveMessage(void* arg) {
 
     // In questo momento (ret==1) quindi è stato ricevuto il messaggio
 
-    // Codice gestione lettura chat
-    int bytes_read = 0;
+    bytes_read = 0;
 
     while (1) {
       ret = read(socket_desc,buf+bytes_read,1);
@@ -93,6 +97,12 @@ void* receiveMessage(void* arg) {
       exit(EXIT_SUCCESS);
     }
 
+    // Gestione connessione con se stessi
+    if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) {
+      printf("\n%sErrore, non puoi connetterti con te stesso\n",KRED);
+      shouldWait = 0;
+    }
+
     // Gestione richiesta connessione
     if (strncmp(buf,request_command,request_command_len)==0) {
       shouldWait = 1;
@@ -114,7 +124,6 @@ void* receiveMessage(void* arg) {
 
       if(strncmp(buf,"yes",strlen("yes")) == 0) {
         // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
-
 
 
         onChat = 1;
@@ -153,9 +162,10 @@ void* sendMessage(void* arg) {
   size_t close_command_len = strlen(close_command);
   volatile sig_atomic_t shouldSend = 0;
 
-
+  int bytes_written;
+  size_t msg_len;
   while (!shouldStop) {
-    printf(">> ");
+    //printf(">> ");
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
         fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
         exit(EXIT_FAILURE);
@@ -184,7 +194,7 @@ void* sendMessage(void* arg) {
         shouldSend = 1;
       } else if (strncmp(buf,LIST,strlen(LIST))==0) {
         printf("Lista utenti connessi:\n");
-        strncpy(buf,"list\n",strlen(buf));
+        strncpy(buf,LIST,strlen(LIST));
         shouldSend = 1;
       } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
         char user[MAX_LEN_NAME];
@@ -214,9 +224,9 @@ void* sendMessage(void* arg) {
 
     if(shouldSend){
       // Numero di bytes da mandare (senza string terminator '\0')
+      msg_len = strlen(buf);
       // Codice gestione invio dati server
-      size_t msg_len = strlen(buf);
-      int bytes_written = 0;
+      bytes_written = 0;
 
       while (1) {
         ret = write(socket_desc,buf+bytes_written,msg_len);
