@@ -195,7 +195,7 @@ void*	client_routine(void *arg) {
         bytes_send++;
         if (query[bytes_send-1] == '\n') break;
       }
-      fprintf(stderr, "Message send to pietro (length: %d)\n", bytes_send);
+      fprintf(stderr, "Message send to %s (length: %d)\n", aux->client_name,bytes_send);
     }
   }
   pthread_exit(NULL);
