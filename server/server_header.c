@@ -183,7 +183,7 @@ void*	client_routine(void *arg) {
         }
         continue;
       }
-
+      set_status(*client_id, OFFLINE);
       fprintf(stderr, "Client %s request connection with %s\n", client_name, aux->client_name);
       bytes_send = 0;
       query_size = strlen(CONNECT);
@@ -201,7 +201,6 @@ void*	client_routine(void *arg) {
         bytes_send++;
         if (query[bytes_send-1] == '\n') break;
       }
-      fprintf(stderr, "Message send to %s (length: %d)\n", aux->client_name,bytes_send);
     }
   }
   pthread_exit(NULL);
