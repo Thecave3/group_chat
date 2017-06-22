@@ -17,7 +17,7 @@ void* receiveMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
-  char* request_command = "CODICERICHIESTADADEFINIRE" ;
+  char* request_command = CONNECT ;
   size_t request_command_len = strlen(request_command);
   char* already_used_alert = NAME_ALREADY_USED ;
   size_t already_used_alert_len = strlen(already_used_alert);
@@ -161,11 +161,15 @@ void* sendMessage(void* arg) {
       shouldSend = 1;
     } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
       char user[MAX_LEN_NAME];
-      for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
-        user[i]=buf[strlen(CONNECT)+j];
+      if(strlen(buf)==strlen(CONNECT)){
+        printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
+      }else{
+        for(int i =0,j=1; i<MAX_LEN_NAME && j<strlen(buf);i++,j++){
+          user[i]=buf[strlen(CONNECT)+j];
+        }
+        printf("Hai scritto il comando connect verso %s\n",user);
+        shouldSend = 1;
       }
-      printf("Hai scritto il comando connect verso %s\n",user);
-      shouldSend = 1;
       /*
       A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
       l'utente che la hai istanziata deve rimanere in attesa e non può più inviare nulla
@@ -264,7 +268,7 @@ void connectTo(char* username) {
 
 // Gestisce input errati da parte dell'utente all'inizio del programma
 void syntaxError(char* prog_name) {
-  fprintf(stderr, "Uso del programma:\n");
+  fprintf(stderr, "Uso del programma:\n\n");
   fprintf(stderr, "       %s <nome_utente>\n", prog_name);
   fprintf(stderr, "Nota che <nome_utente> deve essere al massimo di %d caratteri\n", MAX_LEN_NAME);
   exit(EXIT_FAILURE);
