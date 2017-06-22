@@ -145,7 +145,8 @@ void*	client_routine(void *arg) {
 
     if (strncmp(CONNECT, data, query_size)== 0) {
       data[bytes_read - 1] = '\0';
-      if (find_id_by_name(data + query_size) == *client_id) {
+      char* request_name = data + query_size;
+      if (find_id_by_name(request_name) == *client_id) {
         query_size = strlen(CONNECT_WITH_YOURSELF);
         char* query = malloc(sizeof(char)*query_size);
         fprintf(stderr, "Connection error: NAME_ALREADY_USED\n");
