@@ -20,6 +20,7 @@
 typedef struct client_s {
   int     client_id;
   int     client_desc;
+  int     partner_desc;
   int     client_status;
   char    client_name[MAX_LEN_NAME];
   struct  client_s* next;

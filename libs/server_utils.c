@@ -157,6 +157,7 @@ int send_cl(int sock_desc) {
 			strncpy(data_buffer, aux->client_name, MAX_LEN_NAME);
 			strncat(data_buffer,"\n",1);
 			data_buffer_len = strlen(data_buffer);
+      fprintf(stderr, "Lista dei clients:\n");
 			while (bytes_send < data_buffer_len) {
 				ret = send(sock_desc, data_buffer + bytes_send, 1, 0);
 				if (ret == -1 && errno == EINTR) continue;
