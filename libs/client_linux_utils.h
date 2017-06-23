@@ -34,6 +34,8 @@
 // Pulisce lo schermo
 void clear_screen() {
   printf("%s\e[1;1H\e[2J\n",KNRM);
+  printf(">> ");
+  ERROR_HELPER(fflush(stdout),"Errore fflush");
 }
 // Mostra l'elenco completo dei comandi disponibile per l'utente
 void display_commands() {
@@ -48,6 +50,7 @@ void display_commands() {
   printf("%s%s%s\n\n",KGRN,CLEAR,KNRM);
   printf(">> Mostra questa lista: ");
   printf("%s%s%s\n",KGRN,HELP,KNRM);
+  printf(">> ");
   ERROR_HELPER(fflush(stdout),"Errore fflush");
 }
 

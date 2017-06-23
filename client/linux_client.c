@@ -4,6 +4,7 @@
 volatile sig_atomic_t shouldStop = 0;
 volatile sig_atomic_t shouldWait = 0;
 volatile sig_atomic_t onChat = 0;
+volatile sig_atomic_t isRequest = 0;
 long int socket_desc;
 
 // Gestione CTRL-C
@@ -97,7 +98,7 @@ void* receiveMessage() {
       exit(EXIT_SUCCESS);
     } else if (strncmp(buf,list,list_len)==0) { // Gestione lista
       printf("Lista utenti connessi:\n");
-      // TODO bug lista testare
+      // TODO testare
       printf("==> %s <==\n",&(buf[list_len]));
       shouldWait = 0;
     } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
@@ -111,6 +112,7 @@ void* receiveMessage() {
       printf("\rHai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
       onChat = 1;
+      isRequest = 1;
       shouldWait = 0;
     }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       if(!onChat){
@@ -140,10 +142,9 @@ void* sendMessage() {
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
   size_t msg_len;
+  printf(">> ");
+  ERROR_HELPER(fflush(stdout),"Errore fflush");
   while (!shouldStop) {
-    printf(">> ");
-    ret = fflush(stdout);
-    ERROR_HELPER(ret,"Errore fflush");
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
       exit(EXIT_FAILURE);
@@ -196,7 +197,9 @@ void* sendMessage() {
         shouldSend = 0;
       }
     } else {
-      while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0)){
+      // Se arriva qui significa che allora vi è stata una richiesta di chat.
+      // Il ciclo while serve solo a controllare che la risposta al server sia YES oppure NO
+      while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0) && isRequest){
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
         printf(">> ");
         ret = fflush(stdout);
@@ -206,10 +209,10 @@ void* sendMessage() {
           exit(EXIT_FAILURE);
         }
       }
-      //onChat = strncmp(buf,YES,strlen(YES)) == 0? 1:0;
+      shouldSend = 1;
+      isRequest = 0;
       // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
       // Nessuna chat, il client invia una risposta di no al server e torna la shell
-      shouldSend = 1;
     }
 
     if(shouldSend){
