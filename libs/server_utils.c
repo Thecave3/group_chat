@@ -157,7 +157,7 @@ int send_cl(int sock_desc) {
 			strncpy(data_buffer, aux->client_name, MAX_LEN_NAME);
 			strncat(data_buffer,"\n",1);
 			data_buffer_len = strlen(data_buffer);
-      fprintf(stderr, "Lista dei clients:\n");
+      fprintf(stderr, "Lista dei clients:\r");
 			while (bytes_send < data_buffer_len) {
 				ret = send(sock_desc, data_buffer + bytes_send, 1, 0);
 				if (ret == -1 && errno == EINTR) continue;
@@ -172,7 +172,7 @@ int send_cl(int sock_desc) {
 	}
 	ret = 0;
 	while (ret == 0) {
-		ret = send(sock_desc, "\0", 1, 0);
+		ret = send(sock_desc, "\n", 1, 0);
 		if (ret == -1 && errno == EINTR) continue;
 		if (ret == -1) {
 			perror("send_cl: error in send");

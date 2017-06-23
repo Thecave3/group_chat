@@ -143,6 +143,17 @@ void*	client_routine(void *arg) {
     // LIST: Invio la client_list connessi al client;
     else if (strncmp(data, LIST, sizeof(LIST)) == 0) {
       fprintf(stderr, "Client %s requests client list\n", client_name);
+      bytes_send = 0;
+      query_size = strlen(LIST);
+      while (bytes_send < query_size) {
+        ret = send(client_desc, data + bytes_send, 1, 0);
+        if (ret == -1 && errno == EINTR) continue;
+        if (ret == -1) {
+          remove_cl(*client_id);
+          pthread_exit(NULL);
+        }
+        bytes_send++;
+      }
       send_cl(client->client_desc);
       continue;
     }
