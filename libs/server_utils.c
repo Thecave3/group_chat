@@ -153,11 +153,11 @@ int send_cl(int sock_desc) {
 
   while (aux != NULL) {
 		if (aux->client_status == ONLINE) {
+      fprintf(stderr, "Lista dei clients:\n");
 			memset(data_buffer, 0, MAX_LEN_NAME);
 			strncpy(data_buffer, aux->client_name, MAX_LEN_NAME);
 			strncat(data_buffer,"\n",1);
 			data_buffer_len = strlen(data_buffer);
-      fprintf(stderr, "Lista dei clients:\r");
 			while (bytes_send < data_buffer_len) {
 				ret = send(sock_desc, data_buffer + bytes_send, 1, 0);
 				if (ret == -1 && errno == EINTR) continue;
