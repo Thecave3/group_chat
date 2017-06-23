@@ -2,7 +2,6 @@
 
 
 volatile sig_atomic_t shouldStop = 0;
-volatile sig_atomic_t shouldSend = 0;
 volatile sig_atomic_t shouldWait = 0;
 volatile sig_atomic_t onChat = 0;
 long int socket_desc;
@@ -67,7 +66,7 @@ void* receiveMessage(void* arg) {
     ret = select(nfds, &read_descriptors, NULL, NULL, &timeout);
 
     if (ret == -1 && errno == EINTR) continue;
-    ERROR_HELPER(ret, "Errore select!");
+    ERROR_HELPER(ret, "Errore select");
 
     if (ret == 0) continue; // Timeout scaduto
 
@@ -103,15 +102,9 @@ void* receiveMessage(void* arg) {
       shouldWait = 0;
     } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
+      // TODO eliminare doppio input
       printf("Hai una richiesta di connessione da parte di un altro utente!\n");
-      printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
-      if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
-        fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
-        exit(EXIT_FAILURE);
-      }
-
-      while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0)) {
-        printf("%sErrore%s\n",KRED,KNRM);
+      do {
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
         printf(">> ");
         ret = fflush(stdout);
@@ -120,7 +113,10 @@ void* receiveMessage(void* arg) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
           exit(EXIT_FAILURE);
         }
-      }
+      } while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0));
+
+      // TODO inviare risposta al server
+
       if(strncmp(buf,YES,strlen(YES)) == 0) {
         // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
         printf("inizia la chat\n");
@@ -132,12 +128,12 @@ void* receiveMessage(void* arg) {
         onChat = 0;
       }
       shouldWait = 0;
-      shouldSend = 1;
     }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       fprintf(stderr, "Sessione di chat terminata dall'altro utente.\nPremi ENTER per uscire.\n");
       shouldStop = 1;
     } else { // Stampa messaggio
       buf[bytes_read] = '\0';
+      // TODO bug lista
       printf("\n==> %s <== \n\r", buf);
       ret = fflush(stdout);
       ERROR_HELPER(ret,"Errore fflush");
@@ -152,7 +148,7 @@ void* sendMessage(void* arg) {
   int socket_desc = (int)(long)arg;
   int ret;
   char buf[BUF_LEN];
-
+  volatile sig_atomic_t shouldSend = 0;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
 
