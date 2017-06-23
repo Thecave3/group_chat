@@ -105,7 +105,7 @@ void*	client_routine(void *arg) {
     // Name ok?
   }
 
-  partner_desc = 0;
+  *partner_desc = 0;
   add_cl(client);
 
   fprintf(stderr, "New client %s connected\n", client_name);
