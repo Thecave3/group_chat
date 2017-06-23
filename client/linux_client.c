@@ -90,14 +90,14 @@ void* receiveMessage() {
     }
 
     if (strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
-      printf("\n%sErrore, nome già in uso sul server\n",KRED);
+      printf("\r%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       exit(EXIT_SUCCESS);
     } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
-      printf("\n%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
+      printf("\r%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
       shouldWait = 0;
     } else if (strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione connessione con se stessi
-      printf("\n%sErrore, l'utente scelto non è connesso%s\n",KRED,KNRM);
+      printf("\r%sErrore, l'utente scelto non è connesso%s\n",KRED,KNRM);
       shouldWait = 0;
     } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
@@ -207,8 +207,7 @@ void* sendMessage() {
           shouldWait = 1;
         }
       } else {
-        printf("%sComando errato, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
-        printf("%s\n",KNRM);
+        printf("%sComando errato, inserire \"%s\" per maggiori informazioni%s\n",KRED,HELP,KNRM);
         shouldSend = 0;
       }
     }
