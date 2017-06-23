@@ -119,12 +119,10 @@ void*	client_routine(void *arg) {
       if (ret == -1 && errno == EINTR) continue;
       if (ret == -1) {
         remove_cl(*client_id);
-        free (client);
         pthread_exit(NULL);
       }
       if (ret == 0) {
         remove_cl(*client_id);
-        free (client);
         pthread_exit(NULL);
       }
       bytes_read++;
@@ -139,7 +137,6 @@ void*	client_routine(void *arg) {
     if (strncmp(data, QUIT, sizeof(QUIT)) == 0) {
       fprintf(stderr, "Client %s disconnected\n", client_name);
       remove_cl(*client_id);
-      free (client);
       pthread_exit(NULL);
     }
 
@@ -161,7 +158,6 @@ void*	client_routine(void *arg) {
         if (ret == -1 && errno == EINTR) continue;
         if (ret == -1) {
           remove_cl(*client_id);
-          free (client);
           pthread_exit(NULL);
         }
         bytes_send++;
@@ -178,16 +174,16 @@ void*	client_routine(void *arg) {
         if (ret == -1 && errno == EINTR) continue;
         if (ret == -1) {
           remove_cl(*client_id);
-          free (client);
           pthread_exit(NULL);
         }
         bytes_send++;
       }
     }
     // CONNECT nome: richiesta di connessione verso un altro utente
-    else if (strncmp(CONNECT, data, sizeof(CONNECT))== 0) {
+    else if (strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
+      fprintf(stderr, "Client connect\n");
       data[bytes_read - 1] = '\0';
-      char* request_name = data + query_size;
+      char* request_name = data + sizeof(CONNECT) - 1;
       client_l aux = find_cl_by_name(request_name);
       // Se il nome comunicato non è presente nella lista lo segnalo al client
       if (aux == NULL) {
@@ -200,12 +196,11 @@ void*	client_routine(void *arg) {
           if (ret == -1 && errno == EINTR) continue;
           if (ret == -1) {
             remove_cl(*client_id);
-            free (client);
             pthread_exit(NULL);
           }
           bytes_send++;
         }
-        fprintf(stderr, "Client %s connection error: CLIENT_NOT_EXIST\n", client_name);
+        fprintf(stderr, "Client %s connection error: %s \n", client_name, data);
         continue;
       }
       // Se il client prova una connessione verso se stesso lo segnalo al client
@@ -219,12 +214,11 @@ void*	client_routine(void *arg) {
           if (ret == -1 && errno == EINTR) continue;
           if (ret == -1) {
             remove_cl(*client_id);
-            free (client);
             pthread_exit(NULL);
           }
           bytes_send++;
         }
-        fprintf(stderr, "Client %s connection error: CLIENT_WITH_YOURSELF\n", client_name);
+        fprintf(stderr, "Client %s connection error: %s \n", client_name, data);
         continue;
       }
       // Altrimenti inoltro al client la richiesta di connessione
@@ -242,7 +236,6 @@ void*	client_routine(void *arg) {
           if (ret == -1 && errno == EINTR) continue;
           if (ret == -1) {
             remove_cl(*client_id);
-            free (client);
             pthread_exit(NULL);
           }
           bytes_send++;

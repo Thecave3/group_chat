@@ -39,6 +39,8 @@ void* receiveMessage(void* arg) {
   size_t already_used_alert_len = strlen(already_used_alert);
   char* connect_with_yourself= CONNECT_WITH_YOURSELF;
   size_t connect_with_yourself_len = strlen(connect_with_yourself);
+  char* client_not_exist= CLIENT_NOT_EXIST;
+  size_t client_not_exist_len = strlen(client_not_exist);
 
   // Serve settare un intervallo per evitare di intasare la CPU con controlli
   struct timeval timeout;
@@ -93,8 +95,11 @@ void* receiveMessage(void* arg) {
       printf("\n%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       exit(EXIT_SUCCESS);
-    } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con se stessi
+    } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
       printf("\n%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
+      shouldWait = 0;
+    } else if (strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione connessione con se stessi
+      printf("\n%sErrore, l'utente scelto non è connesso%s\n",KRED,KNRM);
       shouldWait = 0;
     } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
