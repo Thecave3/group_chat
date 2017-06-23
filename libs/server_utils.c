@@ -150,10 +150,9 @@ int send_cl(int sock_desc) {
 
   list_len = 0;
 	bytes_send = 0;
-
+  fprintf(stderr, "Lista dei clients:\n");
   while (aux != NULL) {
 		if (aux->client_status == ONLINE) {
-      fprintf(stderr, "Lista dei clients:\n");
 			memset(data_buffer, 0, MAX_LEN_NAME);
 			strncpy(data_buffer, aux->client_name, MAX_LEN_NAME);
 			strncat(data_buffer,"\n",1);
@@ -169,15 +168,6 @@ int send_cl(int sock_desc) {
 			bytes_send = 0;
 		}
 		aux = aux->next;
-	}
-	ret = 0;
-	while (ret == 0) {
-		ret = send(sock_desc, "\n", 1, 0);
-		if (ret == -1 && errno == EINTR) continue;
-		if (ret == -1) {
-			perror("send_cl: error in send");
-			return -1;
-		}
 	}
 	list_len ++;
 	return list_len;
