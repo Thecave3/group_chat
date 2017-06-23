@@ -97,9 +97,7 @@ void* receiveMessage() {
       shouldStop = 1;
       exit(EXIT_SUCCESS);
     } else if (strncmp(buf,list,list_len)==0) { // Gestione lista
-      printf("Lista utenti connessi:\n");
-      // TODO testare
-      printf("==> %s <==\n",&(buf[list_len]));
+      printf("\rLista utenti connessi:\n");
       shouldWait = 0;
     } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
       printf("\r%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
@@ -111,6 +109,7 @@ void* receiveMessage() {
       shouldWait = 1;
       printf("\rHai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
+      memset(buf, 0, BUF_LEN); // TODO testare senza questa riga dopo soluzione del segfault sul server
       onChat = 1;
       isRequest = 1;
       shouldWait = 0;
@@ -123,7 +122,7 @@ void* receiveMessage() {
       }
     } else { // Stampa messaggio
       buf[bytes_read] = '\0';
-      printf("\r==> %s <==\n", buf);
+      bytes_read>0? printf("\r==> %s\n", buf) : printf("\r");;
       ret = fflush(stdout);
       ERROR_HELPER(ret,"Errore fflush");
     }
