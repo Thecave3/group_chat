@@ -28,8 +28,7 @@ void kill_handler() {
 }
 
 // Routine di ricezione dei messaggi
-void* receiveMessage(void* arg) {
-  int socket_desc = (int)(long)arg;
+void* receiveMessage() {
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
   char* request_command = CONNECT;
@@ -115,17 +114,20 @@ void* receiveMessage(void* arg) {
         }
       } while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0));
 
-      // TODO inviare risposta al server
-
-      if(strncmp(buf,YES,strlen(YES)) == 0) {
-        // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
-        printf("inizia la chat\n");
-
-        onChat = 1;
-      }else{
-        // Nessuna chat, il client invia una risposta di no al server e torna la shell
-        printf("niente chat\n");
-        onChat = 0;
+      // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
+      // Nessuna chat, il client invia una risposta di no al server e torna la shell
+      onChat = strncmp(buf,YES,strlen(YES)) == 0? 1:0;
+      int bytes_written = 0;
+      size_t msg_len = strlen(buf);
+      while (1) {
+        ret = write(socket_desc,buf+bytes_written,msg_len);
+        if (ret==-1) {
+          if (errno == EINTR) {
+            fprintf(stderr,"Errore invio risposta al server, ripeto\n");
+            continue;
+          }
+          ERROR_HELPER(ret,"Errore invio risposta al server panico");
+        } else if ((bytes_written += ret) == msg_len) break;
       }
       shouldWait = 0;
     }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
@@ -144,15 +146,12 @@ void* receiveMessage(void* arg) {
 }
 
 // Routine di gestione dell'invio dei messaggi
-void* sendMessage(void* arg) {
-  int socket_desc = (int)(long)arg;
-  int ret;
+void* sendMessage() {
+  int ret,bytes_written;
   char buf[BUF_LEN];
   volatile sig_atomic_t shouldSend = 0;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
-
-  int bytes_written;
   size_t msg_len;
   printf(">> ");
   ret = fflush(stdout);
@@ -162,7 +161,7 @@ void* sendMessage(void* arg) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
       exit(EXIT_FAILURE);
     }
-    strcat(buf,"\n");
+    //  strcat(buf,"\n"); // non mi ricordo perchè facevamo sta cosa
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
       fprintf(stderr, "%sConnessione chiusa dal server\n",KRED );
@@ -259,10 +258,10 @@ void init_threads() {
 
   pthread_t chat_threads[2];
 
-  ret = pthread_create(&chat_threads[0], NULL, receiveMessage, (void*)(long)socket_desc);
+  ret = pthread_create(&chat_threads[0], NULL, receiveMessage, NULL);
   PTHREAD_ERROR_HELPER(ret, "Errore creazione thread ricezione messaggi");
 
-  ret = pthread_create(&chat_threads[1], NULL, sendMessage, (void*)(long)socket_desc);
+  ret = pthread_create(&chat_threads[1], NULL, sendMessage, NULL);
   PTHREAD_ERROR_HELPER(ret, "Errore creazione thread invio messaggi");
 
   // Armo il segnale per gestire il CTRL-C
