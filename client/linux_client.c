@@ -42,7 +42,7 @@ void* receiveMessage() {
   char* list = LIST;
   size_t list_len = strlen(list);
 
-  // Serve settare un intervallo per evitare di intasare la CPU con controlli
+  // Serve settare un intervallo per evitare di intasare la CPU con controlli e per controllare lo stato dell'altro thread
   struct timeval timeout;
   fd_set read_descriptors;
   int nfds = socket_desc + 1;
@@ -98,7 +98,7 @@ void* receiveMessage() {
     } else if (strncmp(buf,list,list_len)==0) { // Gestione lista
       printf("Lista utenti connessi:\n");
       // TODO bug lista testare
-      printf("==> %s <==\n",&(buf[strlen(buf)-list_len]));
+      printf("==> %s <==\n",&(buf[list_len]));
       shouldWait = 0;
     } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
       printf("\r%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
