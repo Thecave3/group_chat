@@ -1,6 +1,5 @@
 #include "../libs/client_linux_utils.h"
 
-
 volatile sig_atomic_t shouldStop = 0;
 volatile sig_atomic_t shouldWait = 0;
 volatile sig_atomic_t onChat = 0;
@@ -92,20 +91,33 @@ void* receiveMessage() {
       bytes_read++;
     }
 
-    if (strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
+    if(onChat && isRequest){
+      if(strncmp(buf,YES,strlen(YES))==0){
+        printf("L'utente ha accettato la chat!\n");
+      } else {
+        printf("L'utente ha rifiutato la chat!\n");
+      }
+      shouldWait = 0;
+      isRequest = 0;
+      printf(">> ");
+      ERROR_HELPER(fflush(stdout),"Errore fflush");
+      continue;
+    }
+
+    if (!onChat && strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
       printf("\r%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       exit(EXIT_SUCCESS);
-    } else if (strncmp(buf,list,list_len)==0) { // Gestione lista
+    } else if (!onChat && strncmp(buf,list,list_len)==0) { // Gestione lista
       printf("\rLista utenti connessi:\n");
       shouldWait = 0;
-    } else if (strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
+    } else if (!onChat && strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
       printf("\r%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
       shouldWait = 0;
-    } else if (strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione connessione con se stessi
+    } else if (!onChat && strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione connessione con se stessi
       printf("\r%sErrore, l'utente scelto non è connesso%s\n",KRED,KNRM);
       shouldWait = 0;
-    } else if (strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
+    } else if (!onChat && strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
       printf("\rHai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
@@ -116,19 +128,19 @@ void* receiveMessage() {
     }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       if(!onChat){
         fprintf(stderr, "Il server ha chiuso la connessione\n");
+        exit(EXIT_SUCCESS);
       }else{
         fprintf(stderr, "Sessione di chat terminata dall'altro utente.\n");
         onChat = 0;
       }
     } else { // Stampa messaggio
       buf[bytes_read] = '\0';
-      bytes_read>0? printf("\r==> %s\n", buf) : printf("\r");;
-      ret = fflush(stdout);
-      ERROR_HELPER(ret,"Errore fflush");
+      bytes_read>0? printf("\r==> %s\n", buf) : printf("\r");
+      ERROR_HELPER(fflush(stdout),"Errore fflush");
     }
+    //printf("onChat %d, isRequest %d shouldWait %d\n",onChat,isRequest,shouldWait );
     printf(">> ");
-    ret = fflush(stdout);
-    ERROR_HELPER(ret,"Errore fflush");
+    ERROR_HELPER(fflush(stdout),"Errore fflush");
   }
   pthread_exit(NULL);
 }
@@ -188,6 +200,8 @@ void* sendMessage() {
           */
           printf("%sHai scritto il comando connect verso %s%s",KYEL,user,KNRM);
           printf("%sL'input è disabilitato fino alla risposta del server%s\n",KBLU,KNRM);
+          onChat = 1;
+          isRequest = 1;
           shouldSend = 1;
           shouldWait = 1;
         }
@@ -201,8 +215,7 @@ void* sendMessage() {
       while (!(strncmp(buf,YES,strlen(YES)) == 0 || strncmp(buf,NO,strlen(NO)) == 0) && isRequest){
         printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
         printf(">> ");
-        ret = fflush(stdout);
-        ERROR_HELPER(ret,"Errore fflush");
+        ERROR_HELPER(fflush(stdout),"Errore fflush");
         if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
           exit(EXIT_FAILURE);
@@ -211,10 +224,13 @@ void* sendMessage() {
       onChat = strncmp(buf,YES,strlen(YES)) == 0?1:0;
       shouldSend = 1;
       isRequest = 0;
+      printf(">> ");
+      ERROR_HELPER(fflush(stdout),"Errore fflush");
       // Inizia la chat, il client invia uno yes al server,non devo più interpretare i comandi tranne il quit
       // Nessuna chat, il client invia una risposta di no al server e torna la shell
     } else {
-
+      printf(">> ");
+      ERROR_HELPER(fflush(stdout),"Errore fflush");
     }
 
     if(shouldSend){
