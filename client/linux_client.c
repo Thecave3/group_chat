@@ -89,11 +89,23 @@ void* receiveMessage() {
       bytes_read++;
     }
 
+    if (strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
+      printf("\r%sErrore, nome già in uso sul server\n",KRED);
+      shouldStop = 1;
+      exit(EXIT_SUCCESS);
+    }
+
+    //printf("%s\n",buf ); // TODO It's debug, eliminare
+
     if(onChat && isRequest){
       if(strncmp(buf,YES,strlen(YES))==0){
         printf("L'utente ha accettato la chat!\n");
-      } else {
+      } else if(strncmp(buf,NO,strlen(NO))==0){
         printf("L'utente ha rifiutato la chat!\n");
+        onChat = 0;
+      } else if (strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione utente non connesso
+        printf("\r%sErrore, l'utente scelto non esiste sul server%s\n",KRED,KNRM);
+        onChat = 0;
       }
       shouldWait = 0;
       isRequest = 0;
@@ -102,15 +114,8 @@ void* receiveMessage() {
       continue;
     }
 
-    if (!onChat && strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
-      printf("\r%sErrore, nome già in uso sul server\n",KRED);
-      shouldStop = 1;
-      exit(EXIT_SUCCESS);
-    } else if (!onChat && strncmp(buf,list,list_len)==0) { // Gestione lista
+    if (!onChat && strncmp(buf,list,list_len)==0) { // Gestione lista
       printf("\rLista utenti connessi:\n");
-      shouldWait = 0;
-    } else if (!onChat && strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione connessione con se stessi
-      printf("\r%sErrore, l'utente scelto non è connesso%s\n",KRED,KNRM);
       shouldWait = 0;
     } else if (!onChat && strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
@@ -119,7 +124,7 @@ void* receiveMessage() {
       onChat = 1;
       isRequest = 1;
       shouldWait = 0;
-    }else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
+    } else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       if(!onChat){
         fprintf(stderr, "Il server ha chiuso la connessione\n");
         exit(EXIT_SUCCESS);
