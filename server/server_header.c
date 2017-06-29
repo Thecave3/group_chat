@@ -49,13 +49,14 @@ void*	client_routine(void *arg) {
   client_l  client = (client_l) arg;
 
   int       ret;
+  int		quit_flag = 0;
   int       bytes_read;
   int       bytes_send;
   int       query_size;
   int       client_desc  = client->client_desc;
   int*      client_id    = &client->client_id;
   int*      partner_desc = &client->partner_desc;
-  int*      start_connection = &client->start_connection;
+  int*      start_connection;
   char*     client_name  = client->client_name;
   char      data[MAX_DATA_LEN];
 
@@ -102,10 +103,6 @@ void*	client_routine(void *arg) {
     }
     pthread_exit(NULL);
   }
-  else{
-    // Name ok?
-  }
-
   *partner_desc = 0;
   add_cl(client);
 
@@ -114,25 +111,28 @@ void*	client_routine(void *arg) {
   while (1) {
 	// Recupero i messaggi dal client
     bytes_read = 0;
-    memset(data, 0, MAX_DATA_LEN);
-    while (bytes_read < MAX_DATA_LEN) {
-      ret = recv(client_desc, data + bytes_read, 1, 0);
-      if (ret == -1 && errno == EINTR) continue;
-      if (ret == -1) {
-        remove_cl(*client_id);
-        pthread_exit(NULL);
-      }
-      if (ret == 0) {
-        remove_cl(*client_id);
-        pthread_exit(NULL);
-      }
-      bytes_read++;
-      if (data[bytes_read-1] == '\n' ||
+	if (quit_flag == 0) {
+      memset(data, 0, MAX_DATA_LEN);
+      while (bytes_read < MAX_DATA_LEN) {
+        ret = recv(client_desc, data + bytes_read, 1, 0);
+        if (ret == -1 && errno == EINTR) continue;
+        if (ret == -1) {
+          remove_cl(*client_id);
+          pthread_exit(NULL);
+        }
+        if (ret == 0) {
+          remove_cl(*client_id);
+          pthread_exit(NULL);
+        }
+        bytes_read++;
+        if (data[bytes_read-1] == '\n' ||
 	        data[bytes_read-1] == '\r' ||
 	        data[bytes_read-1] == '\0')
-        break;
+          break;
+      }
+      data[bytes_read-1] = '\n';
     }
-    data[bytes_read-1] = '\n';
+    quit_flag = 0;
 
     // QUIT: Chiudo la connessione con il client e lo rimuovo dalla client_list
     if (strncmp(data, QUIT, sizeof(QUIT)) == 0) {
@@ -161,6 +161,7 @@ void*	client_routine(void *arg) {
 
     // YES: Ricezione ack "accetto richiesta di connessione"
     else if (strncmp(data, YES, sizeof(YES)) == 0 && *partner_desc != 0) {
+	  start_connection = &client->start_connection;
       fprintf(stderr, "Client %s accept connection\n",client_name);
       set_status(*client_id, OFFLINE);
       bytes_send = 0;
@@ -195,6 +196,13 @@ void*	client_routine(void *arg) {
         }
 		message_size = strlen(data);
 		fprintf(stderr,"%s", data);
+		if(*start_connection == 3) {
+	      fprintf(stderr, "Porcoddio yes!");
+	      quit_flag = 1;
+	      *partner_desc = 0;
+	      set_status(*client_id, ONLINE);
+	      break;
+		}
 		bytes_send = 0;
         while (bytes_send < message_size) {
           ret = send(*partner_desc, data + bytes_send, 1, 0);
@@ -205,6 +213,12 @@ void*	client_routine(void *arg) {
           } 
           bytes_send++;
         }
+        if(strcmp(data,QUIT) == 0) {
+	      *partner_desc = 0;
+	      *start_connection = 3;
+	      set_status(*client_id, ONLINE);
+	      break;
+		}
       }
     }
 
@@ -231,7 +245,7 @@ void*	client_routine(void *arg) {
       char* request_name = data + sizeof(CONNECT) - 1;
       client_l aux = find_cl_by_name(request_name);
       // Se il nome comunicato non è presente nella lista lo segnalo al client
-      if (aux == NULL) {
+      if (aux == NULL || aux->client_status == OFFLINE) {
         bytes_send = 0;
         query_size = strlen(CLIENT_NOT_EXIST);
         memset(data, 0, MAX_DATA_LEN);
@@ -270,6 +284,7 @@ void*	client_routine(void *arg) {
       else {
         set_status(*client_id, OFFLINE);
         aux->partner_desc = client_desc;
+        set_status(aux->client_id, OFFLINE);
         *partner_desc = aux->client_desc;
         start_connection = &aux->start_connection;
         *start_connection = 0;
@@ -280,7 +295,7 @@ void*	client_routine(void *arg) {
         strncat(data, client_name, MAX_LEN_NAME);
         strncat(data, "\n", 1);
         while (1) {
-          ret = send(aux->client_desc, data + bytes_send, 1, 0);
+          ret = send(*partner_desc, data + bytes_send, 1, 0);
           if (ret == -1 && errno == EINTR) continue;
           if (ret == -1) {
             remove_cl(*client_id);
@@ -293,44 +308,58 @@ void*	client_routine(void *arg) {
         while(1) {
 		  if (*start_connection == 1) {
 		    set_status(*client_id, ONLINE);
+			set_status(aux->client_id, ONLINE);
 			start_connection = &client->start_connection;
-			fprintf(stderr,"client refuse connection");
+			fprintf(stderr,"Client %s refuse connection\n", aux->client_name);
 			break;
 		  }
 		  if (*start_connection == 2) {
-            while(1) {
-			  fprintf(stderr, "Connection Started!\n");
-		      int message_size;
-		      bytes_read = 0;
-		      memset(data, 0, MAX_DATA_LEN);
-		      while (bytes_read < MAX_DATA_LEN) {
-                ret = recv(client_desc, data + bytes_read, 1, 0);
-                if (ret == -1 && errno == EINTR) continue;
-                if (ret == -1) {
-                  remove_cl(*client_id);
-                  pthread_exit(NULL);
-                }
-                if (ret == 0) {
-                  remove_cl(*client_id);
-                  pthread_exit(NULL);
-                }
-                bytes_read++;
-                if (data[bytes_read-1] == '\n') break;
+            fprintf(stderr, "Connection Started!\n");
+		    int message_size;
+		    bytes_read = 0;
+		    memset(data, 0, MAX_DATA_LEN);
+		    while (bytes_read < MAX_DATA_LEN) {
+              ret = recv(client_desc, data + bytes_read, 1, 0);
+              if (ret == -1 && errno == EINTR) continue;
+              if (ret == -1) {
+                remove_cl(*client_id);
+                pthread_exit(NULL);
               }
-		      message_size = strlen(data);
-		      fprintf(stderr,"%s", data);
-		      bytes_send = 0;
-              while (bytes_send < message_size) {
-                ret = send(*partner_desc, data + bytes_send, 1, 0);
-                if (ret == -1 && errno == EINTR) continue;
-                if (ret == -1) {
-                  remove_cl(*client_id);
-                  pthread_exit(NULL);
-                } 
-                bytes_send++;
+              if (ret == 0) {
+                remove_cl(*client_id);
+                pthread_exit(NULL);
               }
+              bytes_read++;
+              if (data[bytes_read-1] == '\n') break;
+            }  
+		    message_size = strlen(data);
+		    fprintf(stderr,"%s", data);
+		    if(*start_connection == 3) {
+	          fprintf(stderr, "Porcoddio connect!");
+	          *partner_desc = 0;
+	          quit_flag = 1;
+	          set_status(*client_id, ONLINE);
+			  set_status(aux->client_id, ONLINE);
+	          *start_connection = 3;
+	          break;
+		    }
+		    bytes_send = 0;
+            while (bytes_send < message_size) {
+              ret = send(*partner_desc, data + bytes_send, 1, 0);
+              if (ret == -1 && errno == EINTR) continue;
+              if (ret == -1) {
+                remove_cl(*client_id);
+                pthread_exit(NULL);
+              } 
+              bytes_send++;
             }
-			fprintf(stderr, "Connection Ended!\n");
+            if(strcmp(data,QUIT) == 0){
+			  *partner_desc = 0;
+	          set_status(*client_id, ONLINE);
+			  set_status(aux->client_id, ONLINE);
+			  *start_connection = 3;
+	          break;
+            }
           }
 	    }
       }
