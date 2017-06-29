@@ -13,6 +13,7 @@ void kill_handler() {
   size_t close_command_len = strlen(close_command);
   int bytes_written = 0;
   int ret;
+<<<<<<< HEAD
   int end = 1 + (int) onChat;
   int i;
   for(i = 0; i < end; i++){
@@ -23,10 +24,18 @@ void kill_handler() {
           fprintf(stderr,"Errore scrittura dati, ripeto\n");
           continue;
         }
+=======
+  while (1) {
+    ret = write(socket_desc,close_command+bytes_written,close_command_len);
+    if (ret==-1) {
+      if (errno == EINTR) {
+        fprintf(stderr,"Errore scrittura dati, ripeto\n");
+        continue;
+      }
+>>>>>>> dcbecb6a5c73b41bd1970702ea489dc5abd777f0
       ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
     } else if ((bytes_written += ret) == close_command_len) break;
   }
-}
   printf("Chiusura connessione effettuata, bye bye\n");
   exit(EXIT_SUCCESS);
 }
