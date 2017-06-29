@@ -11,7 +11,7 @@
 
 #define DEBUG		0
 // Address del server
-#define SERVER_ADDRESS  "127.0.0.1"
+#define SERVER_ADDRESS /* "79.53.14.217" */ "127.0.0.1"
 // Porta del server
 #define SERVER_PORT     8583
 // Lunghezza massima del nome del client

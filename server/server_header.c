@@ -359,6 +359,12 @@ void*	client_routine(void *arg) {
 	          break;
             }
           }
+          if(*start_connection == 3) {
+	          *partner_desc = 0;
+	          set_status(*client_id, ONLINE);
+			  set_status(aux->client_id, ONLINE);
+	          break;
+		    }
 	    }
       }
     }
