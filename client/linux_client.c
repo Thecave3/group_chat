@@ -4,7 +4,7 @@ volatile sig_atomic_t shouldStop = 0;
 volatile sig_atomic_t shouldWait = 0;
 volatile sig_atomic_t onChat = 0;
 volatile sig_atomic_t isRequest = 0;
-long int socket_desc;
+int socket_desc;
 
 // Gestione CTRL-C
 void kill_handler() {
@@ -35,8 +35,6 @@ void* receiveMessage() {
   size_t request_command_len = strlen(request_command);
   char* already_used_alert = NAME_ALREADY_USED;
   size_t already_used_alert_len = strlen(already_used_alert);
-  char* connect_with_yourself= CONNECT_WITH_YOURSELF;
-  size_t connect_with_yourself_len = strlen(connect_with_yourself);
   char* client_not_exist= CLIENT_NOT_EXIST;
   size_t client_not_exist_len = strlen(client_not_exist);
   char* list = LIST;
@@ -111,9 +109,6 @@ void* receiveMessage() {
     } else if (!onChat && strncmp(buf,list,list_len)==0) { // Gestione lista
       printf("\rLista utenti connessi:\n");
       shouldWait = 0;
-    } else if (!onChat && strncmp(buf,connect_with_yourself,connect_with_yourself_len)==0) { // Gestione connessione con utente non connesso
-      printf("\r%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
-      shouldWait = 0;
     } else if (!onChat && strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione connessione con se stessi
       printf("\r%sErrore, l'utente scelto non è connesso%s\n",KRED,KNRM);
       shouldWait = 0;
@@ -146,13 +141,16 @@ void* receiveMessage() {
 }
 
 // Routine di gestione dell'invio dei messaggi
-void* sendMessage() {
+void* sendMessage(void* arg) {
   int ret,bytes_written;
   char buf[BUF_LEN];
   volatile sig_atomic_t shouldSend = 0;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
   size_t msg_len;
+  char* uname = (char*)arg;
+
+
   printf(">> ");
   ERROR_HELPER(fflush(stdout),"Errore fflush");
   while (!shouldStop) {
@@ -192,8 +190,13 @@ void* sendMessage() {
         }
         if(strlen(user) <= 1 || strlen(user) > MAX_LEN_NAME){
           printf("%sInserisci un nome utente valido%s\n",KRED,KNRM);
+          printf(">> ");
           shouldSend = 0;
-        }else{
+        } else if (strncmp(user,uname,MAX_LEN_NAME)==0) {
+          printf("%sErrore, non puoi connetterti con te stesso%s\n",KRED,KNRM);
+          printf(">> ");
+          shouldSend = 0;
+        } else{
           /*
           A questo punto l'utente scelto riceve dal server una richiesta di collegamento,
           l'utente che la ha istanziata deve rimanere in attesa e non può più inviare nulla
@@ -269,7 +272,7 @@ void* sendMessage() {
   pthread_exit(NULL);
 }
 
-void init_threads() {
+void init_threads(char* uname) {
   int ret;
 
   printf("Connessione con il server avvenuta!\n");
@@ -279,7 +282,7 @@ void init_threads() {
   ret = pthread_create(&chat_threads[0], NULL, receiveMessage, NULL);
   PTHREAD_ERROR_HELPER(ret, "Errore creazione thread ricezione messaggi");
 
-  ret = pthread_create(&chat_threads[1], NULL, sendMessage, NULL);
+  ret = pthread_create(&chat_threads[1], NULL, sendMessage, (void*) uname);
   PTHREAD_ERROR_HELPER(ret, "Errore creazione thread invio messaggi");
 
   // Armo il segnale per gestire il CTRL-C
@@ -318,11 +321,21 @@ void connectTo(char* username) {
 
   // Invio username
   strcat(username,"\n");
-  ret = send_message(socket_desc,username,strlen(username));
-  ERROR_HELPER(ret,"Errore invio username");
+  size_t uname_len = strlen(username);
+  int bytes_written = 0;
+  while (1) {
+    ret = write(socket_desc,username+bytes_written,uname_len);
+    if (ret==-1) {
+      if (errno == EINTR) {
+        fprintf(stderr,"Errore scrittura dati, ripeto\n");
+        continue;
+      }
+      ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
+    } else if ((bytes_written += ret) == uname_len) break;
+  }
 
   // Lancio inizializzazione shell
-  init_threads();
+  init_threads(username);
 }
 
 // Gestisce input errati da parte dell'utente all'inizio del programma
