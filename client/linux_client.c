@@ -116,7 +116,6 @@ void* receiveMessage() {
       shouldWait = 1;
       printf("\rHai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
-      memset(buf, 0, BUF_LEN); // TODO testare senza questa riga dopo soluzione del segfault sul server
       onChat = 1;
       isRequest = 1;
       shouldWait = 0;
@@ -133,11 +132,10 @@ void* receiveMessage() {
       bytes_read>0? printf("\r==> %s\n", buf) : printf("\r");
       ERROR_HELPER(fflush(stdout),"Errore fflush");
     }
-    //printf("onChat %d, isRequest %d shouldWait %d\n",onChat,isRequest,shouldWait );
     printf(">> ");
     ERROR_HELPER(fflush(stdout),"Errore fflush");
   }
-  pthread_exit(NULL);
+  pthread_exit(0);
 }
 
 // Routine di gestione dell'invio dei messaggi
@@ -158,7 +156,7 @@ void* sendMessage(void* arg) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
       exit(EXIT_FAILURE);
     }
-    //  strcat(buf,"\n"); // non mi ricordo perchè facevamo sta cosa
+
     // Controlla se il server ha chiuso la connessione
     if (shouldStop){
       fprintf(stderr, "%sConnessione chiusa dal server\n",KRED );
@@ -169,7 +167,7 @@ void* sendMessage(void* arg) {
       // Analizzo l'input utente interpretando i comandi
       if(strlen(buf)<MIN_CMD_LEN){
         printf("%sComando non riconosciuto, inserire \"%s\" per maggiori informazioni\n",KRED,HELP);
-        printf("%s\n",KNRM);
+        printf("%s>> ",KNRM);
         shouldSend = 0;
       } else if (strncmp(buf,CLEAR,strlen(CLEAR))==0) {
         clear_screen();
@@ -210,7 +208,8 @@ void* sendMessage(void* arg) {
           shouldWait = 1;
         }
       } else {
-        printf("%sComando errato, inserire \"%s\" per maggiori informazioni%s\n",KRED,HELP,KNRM);
+        printf("%sComando errato, inserire %s\"%s\"%s per maggiori informazioni%s\n",KRED,KGRN,HELP,KRED,KNRM);
+        printf(">> ");
         shouldSend = 0;
       }
     } else if(isRequest) {
@@ -258,6 +257,8 @@ void* sendMessage(void* arg) {
       if (strncmp(buf,close_command,close_command_len)==0) {
         if (onChat) {
           onChat = 0;
+          printf("%sChat conclusa!\n%s Inserisci un comando per continuare\n",KRED,KNRM);
+          display_commands();
         }else{
           shouldStop = 1;
           exit(EXIT_SUCCESS);
@@ -265,11 +266,11 @@ void* sendMessage(void* arg) {
       }
     }
 
-    while (shouldWait) {
+    while (shouldWait){
       sleep(1);
     }
   }
-  pthread_exit(NULL);
+  pthread_exit(0);
 }
 
 void init_threads(char* uname) {
