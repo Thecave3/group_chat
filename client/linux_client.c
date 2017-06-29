@@ -95,8 +95,6 @@ void* receiveMessage() {
       exit(EXIT_SUCCESS);
     }
 
-    //printf("%s\n",buf ); // TODO It's debug, eliminare
-
     if(onChat && isRequest){
       if(strncmp(buf,YES,strlen(YES))==0){
         printf("L'utente ha accettato la chat!\n");
@@ -159,7 +157,7 @@ void* sendMessage(void* arg) {
   while (!shouldStop) {
     if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
       fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
-      exit(EXIT_FAILURE);
+      kill_handler();
     }
 
     // Controlla se il server ha chiuso la connessione
@@ -187,8 +185,7 @@ void* sendMessage(void* arg) {
         shouldSend = 1;
       } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
         char user[MAX_LEN_NAME];
-        int i;
-        for(i =0; i<MAX_LEN_NAME && i<strlen(buf);i++){
+        for(int i = 0; i<MAX_LEN_NAME && i<strlen(buf);i++){
           user[i]=buf[strlen(CONNECT)+i];
         }
         if(strlen(user) <= 1 || strlen(user) > MAX_LEN_NAME){
@@ -226,7 +223,7 @@ void* sendMessage(void* arg) {
         ERROR_HELPER(fflush(stdout),"Errore fflush");
         if (fgets(buf, sizeof(buf), stdin) != (char*)buf) {
           fprintf(stderr, "%sErrore lettura input, uscita in corso...\n",KRED);
-          exit(EXIT_FAILURE);
+          kill_handler();
         }
       }
       onChat = strncmp(buf,YES,strlen(YES)) == 0?1:0;
@@ -292,7 +289,15 @@ void init_threads(char* uname) {
   PTHREAD_ERROR_HELPER(ret, "Errore creazione thread invio messaggi");
 
   // Armo il segnale per gestire il CTRL-C
-  signal(SIGINT,kill_handler);
+  struct sigaction usr_action;
+  sigset_t block_mask;
+
+  sigfillset (&block_mask);
+  usr_action.sa_handler = kill_handler;
+  usr_action.sa_mask = block_mask;
+  usr_action.sa_flags = 0;
+  ret = sigaction (SIGINT, &usr_action, NULL);
+  ERROR_HELPER(ret,"Errore armamento segnale SIGINT: ");
 
   // Aspetto la terminazione del programma
   ret = pthread_join(chat_threads[0], NULL);
