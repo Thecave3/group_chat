@@ -200,6 +200,7 @@ void*	client_routine(void *arg) {
 	      quit_flag = 1;
 	      *partner_desc = 0;
 	      set_status(*client_id, ONLINE);
+	      set_status(client->partner_id, ONLINE);
 	      break;
 		}
 		bytes_send = 0;
@@ -216,6 +217,7 @@ void*	client_routine(void *arg) {
 	      *partner_desc = 0;
 	      *start_connection = 3;
 	      set_status(*client_id, ONLINE);
+	      set_status(client->partner_id, ONLINE);
 	      break;
 		}
       }
@@ -283,6 +285,8 @@ void*	client_routine(void *arg) {
       else {
         set_status(*client_id, OFFLINE);
         aux->partner_desc = client_desc;
+        client->partner_id = aux->client_id;
+        aux->partner_id = *client_id;
         set_status(aux->client_id, OFFLINE);
         *partner_desc = aux->client_desc;
         start_connection = &aux->start_connection;

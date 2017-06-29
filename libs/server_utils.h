@@ -21,6 +21,7 @@ typedef struct client_s {
   int     client_id;
   int     client_desc;
   int     partner_desc;
+  int     partner_id;
   int     client_status;
   int     start_connection;
   char    client_name[MAX_LEN_NAME];
