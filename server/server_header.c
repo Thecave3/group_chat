@@ -195,9 +195,8 @@ void*	client_routine(void *arg) {
           if (data[bytes_read-1] == '\n') break;
         }
 		message_size = strlen(data);
-		fprintf(stderr,"%s", data);
+		fprintf(stderr,"%s: %s",client_name, data);
 		if(*start_connection == 3) {
-	      fprintf(stderr, "Porcoddio yes!");
 	      quit_flag = 1;
 	      *partner_desc = 0;
 	      set_status(*client_id, ONLINE);
@@ -314,7 +313,6 @@ void*	client_routine(void *arg) {
 			break;
 		  }
 		  if (*start_connection == 2) {
-            fprintf(stderr, "Connection Started!\n");
 		    int message_size;
 		    bytes_read = 0;
 		    memset(data, 0, MAX_DATA_LEN);
@@ -333,9 +331,8 @@ void*	client_routine(void *arg) {
               if (data[bytes_read-1] == '\n') break;
             }  
 		    message_size = strlen(data);
-		    fprintf(stderr,"%s", data);
+		    fprintf(stderr,"%s: %s",client_name, data);
 		    if(*start_connection == 3) {
-	          fprintf(stderr, "Porcoddio connect!");
 	          *partner_desc = 0;
 	          quit_flag = 1;
 	          set_status(*client_id, ONLINE);

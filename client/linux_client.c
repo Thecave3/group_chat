@@ -14,7 +14,8 @@ void kill_handler() {
   int bytes_written = 0;
   int ret;
   int end = 1 + (int) onChat;
-  for(int i = 0; i < end; i++){
+  int i;
+  for(i = 0; i < end; i++){
     while (1) {
       ret = write(socket_desc,close_command+bytes_written,close_command_len);
       if (ret==-1) {
@@ -188,7 +189,8 @@ void* sendMessage(void* arg) {
         shouldSend = 1;
       } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
         char user[MAX_LEN_NAME];
-        for(int i = 0; i<MAX_LEN_NAME && i<strlen(buf);i++){
+        int i;
+        for(i = 0; i<MAX_LEN_NAME && i<strlen(buf);i++){
           user[i]=buf[strlen(CONNECT)+i];
         }
         if(strlen(user) <= 1 || strlen(user) > MAX_LEN_NAME){
