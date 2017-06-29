@@ -186,7 +186,8 @@ void* sendMessage() {
         shouldSend = 1;
       } else if (strncmp(buf,CONNECT,strlen(CONNECT))==0) {
         char user[MAX_LEN_NAME];
-        for(int i =0; i<MAX_LEN_NAME && i<strlen(buf);i++){
+        int i;
+        for(i =0; i<MAX_LEN_NAME && i<strlen(buf);i++){
           user[i]=buf[strlen(CONNECT)+i];
         }
         if(strlen(user) <= 1 || strlen(user) > MAX_LEN_NAME){

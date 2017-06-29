@@ -55,6 +55,7 @@ void*	client_routine(void *arg) {
   int       client_desc  = client->client_desc;
   int*      client_id    = &client->client_id;
   int*      partner_desc = &client->partner_desc;
+  int*      start_connection = &client->start_connection;
   char*     client_name  = client->client_name;
   char      data[MAX_DATA_LEN];
 
@@ -111,7 +112,7 @@ void*	client_routine(void *arg) {
   fprintf(stderr, "New client %s connected\n", client_name);
 
   while (1) {
-    // Recupero i messaggi dal client
+	// Recupero i messaggi dal client
     bytes_read = 0;
     memset(data, 0, MAX_DATA_LEN);
     while (bytes_read < MAX_DATA_LEN) {
@@ -160,7 +161,7 @@ void*	client_routine(void *arg) {
 
     // YES: Ricezione ack "accetto richiesta di connessione"
     else if (strncmp(data, YES, sizeof(YES)) == 0 && *partner_desc != 0) {
-      fprintf(stderr, "Client %s accept connection",client_name);
+      fprintf(stderr, "Client %s accept connection\n",client_name);
       set_status(*client_id, OFFLINE);
       bytes_send = 0;
       query_size = strlen(YES);
@@ -173,11 +174,43 @@ void*	client_routine(void *arg) {
         }
         bytes_send++;
       }
+      *start_connection = 2;
+      while(1) {
+		int message_size;
+		bytes_read = 0;
+		memset(data, 0, MAX_DATA_LEN);
+		while (bytes_read < MAX_DATA_LEN) {
+          ret = recv(client_desc, data + bytes_read, 1, 0);
+          if (ret == -1 && errno == EINTR) continue;
+          if (ret == -1) {
+            remove_cl(*client_id);
+            pthread_exit(NULL);
+          }
+          if (ret == 0) {
+            remove_cl(*client_id);
+            pthread_exit(NULL);
+          }
+          bytes_read++;
+          if (data[bytes_read-1] == '\n') break;
+        }
+		message_size = strlen(data);
+		fprintf(stderr,"%s", data);
+		bytes_send = 0;
+        while (bytes_send < message_size) {
+          ret = send(*partner_desc, data + bytes_send, 1, 0);
+          if (ret == -1 && errno == EINTR) continue;
+          if (ret == -1) {
+            remove_cl(*client_id);
+            pthread_exit(NULL);
+          } 
+          bytes_send++;
+        }
+      }
     }
 
     // NO: Ricezione ack "rifiuto richiesta di connessione"
     else if (strncmp(data, NO, sizeof(NO)) == 0 && *partner_desc != 0) {
-      fprintf(stderr, "Client %s refuse connection",client_name);
+      fprintf(stderr, "Client %s refuse connection\n",client_name);
       bytes_send = 0;
       query_size = strlen(NO);
       while (bytes_send < query_size) {
@@ -189,10 +222,11 @@ void*	client_routine(void *arg) {
         }
         bytes_send++;
       }
+      *partner_desc = 0;
+      *start_connection = 1;
     }
     // CONNECT nome: richiesta di connessione verso un altro utente
     else if (strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
-      fprintf(stderr, "Client connect\n");
       data[bytes_read - 1] = '\0';
       char* request_name = data + sizeof(CONNECT) - 1;
       client_l aux = find_cl_by_name(request_name);
@@ -211,7 +245,7 @@ void*	client_routine(void *arg) {
           }
           bytes_send++;
         }
-        fprintf(stderr, "Client %s connection error: %s \n", client_name, data);
+        fprintf(stderr, "Client %s connection error: %s", client_name, data);
         continue;
       }
       // Se il client prova una connessione verso se stesso lo segnalo al client
@@ -229,13 +263,16 @@ void*	client_routine(void *arg) {
           }
           bytes_send++;
         }
-        fprintf(stderr, "Client %s connection error: %s \n", client_name, data);
+        fprintf(stderr, "Client %s connection error: %s", client_name, data);
         continue;
       }
       // Altrimenti inoltro al client la richiesta di connessione
       else {
         set_status(*client_id, OFFLINE);
         aux->partner_desc = client_desc;
+        *partner_desc = aux->client_desc;
+        start_connection = &aux->start_connection;
+        *start_connection = 0;
         bytes_send = 0;
         query_size = strlen(CONNECT);
         memset(data, 0, MAX_DATA_LEN);
@@ -253,6 +290,49 @@ void*	client_routine(void *arg) {
           if (data[bytes_send-1] == '\n') break;
         }
         fprintf(stderr, "Client %s request connection with %s\n", client_name, aux->client_name);
+        while(1) {
+		  if (*start_connection == 1) {
+		    set_status(*client_id, ONLINE);
+			start_connection = &client->start_connection;
+			fprintf(stderr,"client refuse connection");
+			break;
+		  }
+		  if (*start_connection == 2) {
+            while(1) {
+			  fprintf(stderr, "Connection Started!\n");
+		      int message_size;
+		      bytes_read = 0;
+		      memset(data, 0, MAX_DATA_LEN);
+		      while (bytes_read < MAX_DATA_LEN) {
+                ret = recv(client_desc, data + bytes_read, 1, 0);
+                if (ret == -1 && errno == EINTR) continue;
+                if (ret == -1) {
+                  remove_cl(*client_id);
+                  pthread_exit(NULL);
+                }
+                if (ret == 0) {
+                  remove_cl(*client_id);
+                  pthread_exit(NULL);
+                }
+                bytes_read++;
+                if (data[bytes_read-1] == '\n') break;
+              }
+		      message_size = strlen(data);
+		      fprintf(stderr,"%s", data);
+		      bytes_send = 0;
+              while (bytes_send < message_size) {
+                ret = send(*partner_desc, data + bytes_send, 1, 0);
+                if (ret == -1 && errno == EINTR) continue;
+                if (ret == -1) {
+                  remove_cl(*client_id);
+                  pthread_exit(NULL);
+                } 
+                bytes_send++;
+              }
+            }
+			fprintf(stderr, "Connection Ended!\n");
+          }
+	    }
       }
     }
   }

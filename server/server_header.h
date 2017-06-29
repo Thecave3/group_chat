@@ -19,6 +19,6 @@
 
 void 	server_exit ();
 void*	client_routine(void* arg);
-int   server_init(int* sock_desc, struct sockaddr_in* sock_addr);
+int     server_init(int* sock_desc, struct sockaddr_in* sock_addr);
 int 	server_routine(int argc, char const *argv[]);
 #endif
