@@ -60,6 +60,7 @@ void*	client_routine(void *arg) {
   char*     client_name  = client->client_name;
   char      data[MAX_DATA_LEN];
 
+  client-> start_connection = 0;
   bytes_read = 0;
   memset(data, 0, MAX_LEN_NAME);
 
@@ -132,8 +133,9 @@ void*	client_routine(void *arg) {
       }
       data[bytes_read-1] = '\n';
     }
+    
     quit_flag = 0;
-
+    
     // QUIT: Chiudo la connessione con il client e lo rimuovo dalla client_list
     if (strncmp(data, QUIT, sizeof(QUIT)) == 0) {
       fprintf(stderr, "Client %s disconnected\n", client_name);
@@ -166,6 +168,7 @@ void*	client_routine(void *arg) {
       set_status(*client_id, OFFLINE);
       bytes_send = 0;
       query_size = strlen(YES);
+      *start_connection = 2;
       while (bytes_send < query_size) {
         ret = send(*partner_desc, data + bytes_send, 1, 0);
         if (ret == -1 && errno == EINTR) continue;
@@ -175,7 +178,6 @@ void*	client_routine(void *arg) {
         }
         bytes_send++;
       }
-      *start_connection = 2;
       while(1) {
 		int message_size;
 		bytes_read = 0;
@@ -195,13 +197,16 @@ void*	client_routine(void *arg) {
           if (data[bytes_read-1] == '\n') break;
         }
 		message_size = strlen(data);
-		fprintf(stderr,"%s: %s",client_name, data);
 		if(*start_connection == 3) {
-	      quit_flag = 1;
-	      *partner_desc = 0;
-	      set_status(*client_id, ONLINE);
-	      break;
+		  quit_flag = 1;
+	      if (strncmp(data, YES, sizeof(YES)) == 0) break;
+	      else if (strncmp(data, NO, sizeof(NO)) == 0) break;
+	      else {
+			*partner_desc = 0;
+	        break;
+		  }
 		}
+		fprintf(stderr,"%s: %s",client_name, data);
 		bytes_send = 0;
         while (bytes_send < message_size) {
           ret = send(*partner_desc, data + bytes_send, 1, 0);
@@ -216,6 +221,7 @@ void*	client_routine(void *arg) {
 	      *partner_desc = 0;
 	      *start_connection = 3;
 	      set_status(*client_id, ONLINE);
+	      set_status(client->partner_id, ONLINE);
 	      break;
 		}
       }
@@ -239,6 +245,7 @@ void*	client_routine(void *arg) {
       *partner_desc = 0;
       *start_connection = 1;
     }
+    
     // CONNECT nome: richiesta di connessione verso un altro utente
     else if (strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
       data[bytes_read - 1] = '\0';
@@ -283,11 +290,11 @@ void*	client_routine(void *arg) {
       // Altrimenti inoltro al client la richiesta di connessione
       else {
         aux->partner_desc = client_desc;
+        aux->partner_id = *client_id;
         set_status(*client_id, OFFLINE);
         set_status(aux->client_id, OFFLINE);
         *partner_desc = aux->client_desc;
         start_connection = &aux->start_connection;
-        *start_connection = 0;
         bytes_send = 0;
         query_size = strlen(CONNECT);
         memset(data, 0, MAX_DATA_LEN);
@@ -309,8 +316,7 @@ void*	client_routine(void *arg) {
 		  if (*start_connection == 1) {
 		    set_status(*client_id, ONLINE);
 			set_status(aux->client_id, ONLINE);
-			start_connection = &client->start_connection;
-			fprintf(stderr,"Client %s refuse connection\n", aux->client_name);
+			*start_connection = 0;
 			break;
 		  }
 		  if (*start_connection == 2) {
@@ -332,15 +338,16 @@ void*	client_routine(void *arg) {
               if (data[bytes_read-1] == '\n') break;
             }  
 		    message_size = strlen(data);
-		    fprintf(stderr,"%s: %s",client_name, data);
 		    if(*start_connection == 3) {
-	          *partner_desc = 0;
 	          quit_flag = 1;
-	          set_status(*client_id, ONLINE);
-			  set_status(aux->client_id, ONLINE);
-	          *start_connection = 3;
-	          break;
+	          if (strncmp(data, YES, sizeof(YES)) == 0) break;
+	          else if (strncmp(data, NO, sizeof(NO)) == 0) break;
+	          else {
+			    *partner_desc = 0;
+	            break;
+		      }
 		    }
+		    fprintf(stderr,"%s: %s",client_name, data);
 		    bytes_send = 0;
             while (bytes_send < message_size) {
               ret = send(*partner_desc, data + bytes_send, 1, 0);
@@ -353,18 +360,13 @@ void*	client_routine(void *arg) {
             }
             if(strcmp(data,QUIT) == 0){
 			  *partner_desc = 0;
+	          quit_flag = 0;
 	          set_status(*client_id, ONLINE);
 			  set_status(aux->client_id, ONLINE);
 			  *start_connection = 3;
 	          break;
             }
           }
-          if(*start_connection == 3) {
-	          *partner_desc = 0;
-	          set_status(*client_id, ONLINE);
-			  set_status(aux->client_id, ONLINE);
-	          break;
-		    }
 	    }
       }
     }
