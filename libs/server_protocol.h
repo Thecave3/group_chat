@@ -37,9 +37,6 @@
 int recv_message(int socket_desc, char* buffer,  int buffer_len);
 int send_message(int socket_desc, char* buffer, int buffer_len);
 
-//Tutte le funzioni rimandano la gestione dell'errore al livello superiore,
-//per le funzioni server_connect(), download_list() e server_disconnect()
-//è possibile verificare la causa di errore tramite errno tramite metodo
-//standard.
+//Tutte le funzioni rimandano la gestione dell'errore al livello superiore
 
 #endif

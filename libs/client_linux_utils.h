@@ -7,18 +7,15 @@
 #include <sys/shm.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <semaphore.h>
+#include <pthread.h>
 
 #include "colors.h"
 #include "server_protocol.h"
-#include "common.h"
 
 #define CLEAR           	"clear"
 #define HELP              "help"
 #define MIN_CMD_LEN 4
-
-#define STON "STON\0"
-#define STOF "STOF\0"
+#define BUF_LEN 1024
 
 #define EXIT_SUCCESS 0
 
