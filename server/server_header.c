@@ -133,9 +133,9 @@ void*	client_routine(void *arg) {
       }
       data[bytes_read-1] = '\n';
     }
-    
+
     quit_flag = 0;
-    
+
     // QUIT: Chiudo la connessione con il client e lo rimuovo dalla client_list
     if (strncmp(data, QUIT, sizeof(QUIT)) == 0) {
       fprintf(stderr, "Client %s disconnected\n", client_name);
@@ -214,7 +214,7 @@ void*	client_routine(void *arg) {
           if (ret == -1) {
             remove_cl(*client_id);
             pthread_exit(NULL);
-          } 
+          }
           bytes_send++;
         }
         if(strcmp(data,QUIT) == 0) {
@@ -245,7 +245,7 @@ void*	client_routine(void *arg) {
       *partner_desc = 0;
       *start_connection = 1;
     }
-    
+
     // CONNECT nome: richiesta di connessione verso un altro utente
     else if (strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
       data[bytes_read - 1] = '\0';
@@ -336,7 +336,7 @@ void*	client_routine(void *arg) {
               }
               bytes_read++;
               if (data[bytes_read-1] == '\n') break;
-            }  
+            }
 		    message_size = strlen(data);
 		    if(*start_connection == 3) {
 	          quit_flag = 1;
@@ -355,7 +355,7 @@ void*	client_routine(void *arg) {
               if (ret == -1) {
                 remove_cl(*client_id);
                 pthread_exit(NULL);
-              } 
+              }
               bytes_send++;
             }
             if(strcmp(data,QUIT) == 0){

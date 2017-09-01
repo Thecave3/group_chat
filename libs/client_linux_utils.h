@@ -15,7 +15,6 @@
 #define CLEAR           	"clear"
 #define HELP              "help"
 #define MIN_CMD_LEN 4
-#define BUF_LEN 1024
 
 #define EXIT_SUCCESS 0
 

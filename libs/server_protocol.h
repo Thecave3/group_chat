@@ -17,6 +17,8 @@
 // Lunghezza massima del nome del client
 #define MAX_LEN_NAME    10
 
+#define BUF_LEN 1024
+
 #define CONNECT         	    "connect "
 #define LIST                  "list\n"
 #define QUIT            	    "quit\n"
