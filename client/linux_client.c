@@ -27,6 +27,13 @@ void kill_handler() {
   exit(EXIT_SUCCESS);
 }
 
+// Gestione SIGPIPE
+void kill_pipe() {
+  shouldStop = 1;
+  printf("Chiusura connessione effettuata dal server, bye bye\n");
+  exit(EXIT_SUCCESS);
+}
+
 // Routine di ricezione dei messaggi
 void* receiveMessage() {
   char* close_command = QUIT;
@@ -290,15 +297,25 @@ void init_threads(char* uname) {
   PTHREAD_ERROR_HELPER(ret, "Errore creazione thread invio messaggi");
 
   // Armo il segnale per gestire il CTRL-C
-  struct sigaction usr_action;
+  struct sigaction sigint_action;
   sigset_t block_mask;
 
   sigfillset (&block_mask);
-  usr_action.sa_handler = kill_handler;
-  usr_action.sa_mask = block_mask;
-  usr_action.sa_flags = 0;
-  ret = sigaction (SIGINT, &usr_action, NULL);
+  sigint_action.sa_handler = kill_handler;
+  sigint_action.sa_mask = block_mask;
+  sigint_action.sa_flags = 0;
+  ret = sigaction (SIGINT, &sigint_action, NULL);
   ERROR_HELPER(ret,"Errore armamento segnale SIGINT: ");
+
+  // Armo il segnale per gestire SIGPIPE
+  struct sigaction sigpipe_action;
+  sigset_t mask_two;
+  sigfillset (&mask_two);
+  sigpipe_action.sa_handler = kill_pipe;
+  sigpipe_action.sa_mask = mask_two;
+  sigpipe_action.sa_flags = 0;
+  ret = sigaction (SIGPIPE, &sigpipe_action, NULL);
+  ERROR_HELPER(ret,"Errore armamento segnale SIGPIPE: ");
 
   // Aspetto la terminazione del programma
   ret = pthread_join(chat_threads[0], NULL);
