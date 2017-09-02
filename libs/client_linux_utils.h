@@ -10,7 +10,7 @@
 #include <pthread.h>
 
 #include "colors.h"
-#include "server_protocol.h"
+#include "protocol.h"
 
 #define CLEAR           	"clear"
 #define HELP              "help"

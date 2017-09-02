@@ -1,15 +1,6 @@
 #ifndef SERVER_PROTOCOL_H
 #define SERVER_PROTOCOL_H
 
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-
-#define DEBUG		0
 // Address del server
 #define SERVER_ADDRESS /* "79.53.14.217" */ "127.0.0.1"
 // Porta del server
