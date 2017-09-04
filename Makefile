@@ -1,8 +1,8 @@
 CC = gcc -Wall
 OPT = -O0
 LDFLAGS = -ggdb -lpthread 
-S_COMMON = libs/server_protocol.c libs/server_utils.c server/server_header.c
-C_COMMON = libs/server_protocol.c
+S_COMMON = server/main_routine.c libs/protocol.c libs/list.c server/thread_routine.c
+C_COMMON = libs/protocol.c
 CMN = libs/common.h
 
 all: clean cartella server_linux linux_client

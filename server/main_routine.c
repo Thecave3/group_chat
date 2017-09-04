@@ -40,7 +40,7 @@ void server_exit () {
   fprintf(stderr, "Server Halted\n");
 }
 
-int server_routine(int argc, char const *argv[]) {
+int main_routine(int argc, char const *argv[]) {
 
   int server_desc ,
       client_desc,

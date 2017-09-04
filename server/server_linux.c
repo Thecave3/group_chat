@@ -1,4 +1,10 @@
-#include "server_header.h"
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include "main_routine.h"
 
 #define HELP "usage %s ACTION OPTION\nACTION:\n\t--start: start the server\n\t--kill:  kill the server\n"
 
@@ -35,7 +41,7 @@ int 	main(int argc, char const *argv[]) {
         perror("Fork() Fail");                                                    // Stampo un messaggio di errore
         exit(EXIT_FAILURE);                                                       // Termino il processo
       }
-      if (pid > 0) server_routine(argc,argv);                                     // Se il pid è maggiore di 0 sono nel processo figlio quindi avvio la routine del server
+      if (pid > 0) main_routine(argc,argv);                                     // Se il pid è maggiore di 0 sono nel processo figlio quindi avvio la routine del server
       check++;                                                                    // Incremento la variabile check
       break;                                                                      // Interrompo il ciclo
     }

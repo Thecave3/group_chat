@@ -31,7 +31,6 @@ void*	client_routine(void *arg) {
   memcpy(client_name, data, bytes_read);
 
   bytes_send = 0;
-
   // Verifico se esiste gà un client con tale nome
   if (valid_name(client_name) <= 0) {
     query_size = strlen(NAME_ALREADY_USED);
@@ -48,10 +47,11 @@ void*	client_routine(void *arg) {
     }
     pthread_exit(NULL);
   }
+
   *partner_desc = 0;
   add_cl(client);
 
-  fprintf(stderr, "New client %s connected\n", client_name);
+
 
   while (1) {
 	// Recupero i messaggi dal client

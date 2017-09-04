@@ -119,7 +119,7 @@ int valid_name(char* name) {
 	aux = client_list;
 	while (aux != NULL) {
     if (strncmp(aux->name, name, MAX_LEN_NAME) == 0) {
-      ret = 0;
+      ret = -1;
       break;
     }
 		aux = aux->next;

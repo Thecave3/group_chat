@@ -1,9 +1,7 @@
 #ifndef LIST_H
 #define LIST_H
 
-#define OFFLINE	0
-#define ONLINE 	1
-#define MAX_LEN_NAME    11
+#include "protocol.h"
 
 typedef struct client_s {
   int     id;

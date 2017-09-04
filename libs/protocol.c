@@ -13,22 +13,18 @@ int recv_message(int socket_desc, char* buffer,  int buffer_len) {
   int   ret;
   int   bytes_read = 0;
 
-  while(1) {
+  while(bytes_read < buffer_len) {
     ret = recv(socket_desc, buffer + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR)
 			continue;
-    if (ret == -1) {
-			if (DEBUG) perror("recv_message");
+    if (ret <= 0) {
+			if (DEBUG && ret == -1) perror("recv_message");
+      if (DEBUG && ret == 0) perror("Connection closed by client");
       return -1;
-    }
-    if (ret == 0) {
-			if (DEBUG) perror("Connection closed by client");
-      return 0;
     }
     bytes_read++;
     if (buffer[bytes_read-1] == '\n' ||
-				buffer[bytes_read-1] == '\0' ||
-				bytes_read == buffer_len)
+				buffer[bytes_read-1] == '\0' )
 			break;
   }
   buffer[bytes_read-1] = '\0';
@@ -40,13 +36,16 @@ int send_message(int socket_desc, char* buffer, int buffer_len) {
   int   bytes_send = 0;
 
   while (bytes_send < buffer_len) {
-    ret = send(socket_desc, buffer + bytes_send, buffer_len - bytes_send, 0);
+    ret = send(socket_desc, buffer + bytes_send, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
     if (ret == -1) {
-	  if (DEBUG) perror("send_message");
+	    if (DEBUG) perror("send_message");
       return -1;
     }
-    bytes_send += ret;
+    bytes_send ++;
+    if (buffer[bytes_send-1] == '\n' ||
+				buffer[bytes_send-1] == '\0' )
+			break;
   }
   return bytes_send;
 }
