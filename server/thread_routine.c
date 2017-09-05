@@ -81,8 +81,10 @@ void *thread_routine(void* arg) {
       }
       if (DEBUG) fprintf(stderr, " OK\n");
     }
-
+    else if (strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
+      data[ret - 1] = '\0';
+      char* request_name = data + sizeof(CONNECT) - 1;
+    }
   }
-
   pthread_exit(NULL);
 }

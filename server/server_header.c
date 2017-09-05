@@ -191,7 +191,7 @@ void*	client_routine(void *arg) {
     }
 
     // CONNECT nome: richiesta di connessione verso un altro utente
-    else if (strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
+
       data[bytes_read - 1] = '\0';
       char* request_name = data + sizeof(CONNECT) - 1;
       client_l aux = find_cl_by_name(request_name);
