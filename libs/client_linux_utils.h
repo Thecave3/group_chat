@@ -2,7 +2,12 @@
 #define CLIENT_LINUX_H
 
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
