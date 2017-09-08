@@ -56,7 +56,7 @@ void*	client_routine(void *arg) {
   while (1) {
 	// Recupero i messaggi dal client
     bytes_read = 0;
-	if (quit_flag == 0) {
+	if (FQUIT_flag == 0) {
       memset(data, 0, MAX_DATA_LEN);
       while (bytes_read < MAX_DATA_LEN) {
         ret = recv(client_desc, data + bytes_read, 1, 0);

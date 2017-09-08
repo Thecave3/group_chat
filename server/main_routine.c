@@ -19,19 +19,15 @@
 #define MAX_CONN_QUEUE 10
 
 /* Routine di inizializzazione del server */
-int server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
-  if (list_init()) return -1;
+void server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
+  if (!list_init()) exit(EXIT_FAILURE);
   *sock_desc = socket(AF_INET , SOCK_STREAM , 0);
   if (*sock_desc == -1) exit(EXIT_FAILURE);
   sock_addr->sin_family = AF_INET;
   sock_addr->sin_addr.s_addr = INADDR_ANY;
   sock_addr->sin_port = htons(SERVER_PORT);
-  if (bind(*sock_desc,
-          (struct sockaddr *)sock_addr ,
-          sizeof(*sock_addr)) < 0)
-    return -1;
-  if(listen(*sock_desc , MAX_CONN_QUEUE)) return -1;
-  return 1;
+  if (bind(*sock_desc,(struct sockaddr *)sock_addr ,sizeof(*sock_addr)) < 0) exit(EXIT_FAILURE);
+  if(listen(*sock_desc , MAX_CONN_QUEUE)) exit(EXIT_FAILURE);
 }
 
 /* Funzione di terminazione del server */
@@ -54,8 +50,7 @@ int main_routine(int argc, char const *argv[]) {
   if (atexit(server_exit) != 0) exit(EXIT_FAILURE);
   if (signal(SIGINT, exit) == SIG_ERR) exit(EXIT_FAILURE);
 
-  ret = server_init(&server_desc, &server_addr);
-  if (ret < 1) exit(EXIT_FAILURE);
+  server_init(&server_desc, &server_addr);
   fprintf(stderr, "Server Started\n");
 
   client_addr_len = sizeof(client_addr);
@@ -63,19 +58,12 @@ int main_routine(int argc, char const *argv[]) {
   // Metto il server in attesa di richieste di connessione
   while(1) {
     memset(&client_addr, 0, sizeof(client_addr));
-    client_desc = accept(server_desc,
-                         (struct sockaddr *)&client_addr,
-                         (socklen_t*)&client_addr_len);
+    client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
     if (client_desc < 0) continue;
-
-    // Se arriva un client rimando la gestione all'apposito thread
     client_l thread_arg = malloc(sizeof(client_t));
     thread_arg->descriptor = client_desc;
     pthread_t* init_client_thread = malloc(sizeof(pthread_t));
-    ret = pthread_create(init_client_thread,
-                         NULL,
-                         thread_routine,
-                         (void*) thread_arg);
+    ret = pthread_create(init_client_thread, NULL, thread_routine, (void*) thread_arg);
     if (ret != 0) continue;
     ret = pthread_detach(*init_client_thread);
   }

@@ -3,13 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "list.h"
 
 #define DATA_BUFFER_LEN 16
+#define ONLINE 1
+#define BUSY   0
 
 int       nclients;
 int	      id_clients;
@@ -19,14 +20,15 @@ sem_t     client_list_semaphore;
 
 int list_init() {
   nclients = 0;
-  if (sem_init(&client_list_semaphore, 0, 1)) return 0;
+  if (sem_init(&client_list_semaphore, 0, 1) == -1) return 0;
   return 1;
 }
 
 int add_cl(client_l client) {
-	if (sem_wait(&client_list_semaphore)) return -1;
   client->id = id_clients;
   client->status = ONLINE;
+  if (sem_init(&client->sem, 0, 1) == -1) return -1;
+	if (sem_wait(&client_list_semaphore) == -1) return -1;
   if (nclients == 0) {
     client->next = NULL;
     client->prev = NULL;
@@ -41,15 +43,16 @@ int add_cl(client_l client) {
   }
 	nclients++;
   id_clients++;
-  if (sem_post(&client_list_semaphore))return -1;
+  if (sem_post(&client_list_semaphore) == -1)return -1;
   return 1;
 }
 
 int remove_cl(int id) {
   int ret = 0;
-	if (sem_wait(&client_list_semaphore)) return -1;
   client_l aux, bux;
   aux = client_list;
+	if (sem_destroy(&client_list_semaphore)) return -1;
+	if (sem_wait(&client_list_semaphore) == -1) return -1;
   while (aux != NULL) {
     if (aux->id == id) {
       bux = aux;
@@ -78,39 +81,48 @@ int remove_cl(int id) {
     }
 		aux = aux->next;
     }
-  if (sem_post(&client_list_semaphore)) return -1;
+  if (sem_post(&client_list_semaphore) == -1) return -1;
   return ret;
 }
 
 int set_status(int id, int status) {
-  if (sem_wait(&client_list_semaphore)) return -1;
-	client_l aux;
+  client_l aux;
   int ret = 0;
 	aux = client_list;
   if (status != 1 || status != 0) {
 	  while (aux != NULL) {
 		  if (aux->id == id) {
-        aux->status = status;
-        ret = 1;
-        break;
+          if (sem_wait(&aux->sem) == -1) return -1;
+	        aux->status = status;
+          ret = 1;
+          break;
+          if (sem_post(&aux->sem) == -1) return -1;
       }
 		  aux = aux->next;
 	  }
   }
-	if (sem_post(&client_list_semaphore)) return -1;
-  return ret;
+	return ret;
 }
 
-int find_id_by_name(char* name) {
+client_l find_cl_by_name(char* name) {
 	client_l aux;
 	aux = client_list;
 	while (aux != NULL) {
     int name_size = sizeof(aux->name);
-		if (strncmp(aux->name, name, name_size) == 0) break;
+		if (strncmp(aux->name, name, name_size)) break;
 		aux = aux->next;
 	}
-	if (sem_post(&client_list_semaphore)) return -1;
-	return aux->id;
+	return aux;
+}
+
+client_l find_cl_by_id(int id) {
+	client_l aux;
+	aux = client_list;
+	while (aux != NULL) {
+		if (id == aux->id) break;
+		aux = aux->next;
+	}
+	return aux;
 }
 
 int valid_name(char* name) {
@@ -118,7 +130,7 @@ int valid_name(char* name) {
   int ret = 1;
 	aux = client_list;
 	while (aux != NULL) {
-    if (strncmp(aux->name, name, MAX_LEN_NAME) == 0) {
+    if (strncmp(aux->name, name, LIST_LEN_NAME) == 0) {
       ret = -1;
       break;
     }
@@ -145,12 +157,12 @@ int get_name(int id, char* buffer) {
   int ret = -1;
   client_l aux = client_list;
 
-  buffer = malloc(sizeof(char) * MAX_LEN_NAME);
-  memset(buffer, 0, MAX_LEN_NAME);
+  buffer = malloc(sizeof(char) * LIST_LEN_NAME);
+  memset(buffer, 0, LIST_LEN_NAME);
 
 	while (aux != NULL) {
 		if (aux->id == id) {
-      memcpy(buffer, aux->name, MAX_LEN_NAME);
+      memcpy(buffer, aux->name, LIST_LEN_NAME);
       ret = strlen(buffer);
       break;
     }
@@ -173,24 +185,19 @@ int get_status(int id) {
 	return ret;
 }
 
-int get_list(char * buffer) {
-  int n = 1;
-  int ret = 0;
-	client_l  aux = client_list;
-	buffer = malloc(sizeof(char) * MAX_LEN_NAME);
-  memset(buffer, 0, MAX_LEN_NAME);
+int get_list(char **buffer) {
+  int n = 0;
+  client_l aux = client_list;
+  (*buffer) = (char*) malloc(nclients * LIST_LEN_NAME);
+  memset((*buffer), 0, nclients * LIST_LEN_NAME);
   while (aux != NULL) {
-		if (aux->status == ONLINE) {
-      ret = sizeof(char) * MAX_LEN_NAME * n;
-      if (n != 1) buffer = realloc(buffer, ret);
-      strncat(buffer, aux->name, MAX_LEN_NAME);
-      n++;
-		}
-    buffer = realloc(buffer, ret + sizeof(char));
-    strncat(buffer, "\0 ", sizeof(char));
-		aux = aux->next;
-	}
-  return ret;
+    if (n == 0) memcpy((*buffer), aux->name, LIST_LEN_NAME);
+    else strncat((*buffer), aux->name, LIST_LEN_NAME);
+    strncat((*buffer), "\n", 1);
+    aux = aux->next;
+    n++;
+  }
+  return nclients * LIST_LEN_NAME;
 }
 
 void free_list() {

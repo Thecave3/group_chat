@@ -20,7 +20,7 @@
 #define NO                    "no\n"
 
 // Stati del client
-#define OFFLINE   0
+#define BUSY      0
 #define ONLINE    1
 
 //Utilizzo queste funzioni per far comunicare fra loro i messaggio dei due client
@@ -29,6 +29,8 @@
 //L'unico caso non gestibile di invio al server è l'assenza di connessione.
 int recv_message(int socket_desc, char* buffer,  int buffer_len);
 int send_message(int socket_desc, char* buffer, int buffer_len);
+int send_query(int socket_desc, char* query, int query_len);
+int recv_query(int socket_desc, char* query,  int query_len);
 
 //Tutte le funzioni rimandano la gestione dell'errore al livello superiore
 
