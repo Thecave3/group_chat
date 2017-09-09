@@ -109,10 +109,10 @@ client_l find_cl_by_name(char* name) {
 	aux = client_list;
 	while (aux != NULL) {
     int name_size = sizeof(aux->name);
-		if (strncmp(aux->name, name, name_size)) break;
+		if (strncmp(aux->name, name, name_size) == 0) return aux;
 		aux = aux->next;
 	}
-	return aux;
+	return NULL;
 }
 
 client_l find_cl_by_id(int id) {
@@ -187,9 +187,10 @@ int get_status(int id) {
 
 int get_list(char **buffer) {
   int n = 0;
+  int ret = (sizeof(char) * nclients * LIST_LEN_NAME) + 1;
   client_l aux = client_list;
-  (*buffer) = (char*) malloc(nclients * LIST_LEN_NAME);
-  memset((*buffer), 0, nclients * LIST_LEN_NAME);
+  (*buffer) = (char*) malloc(ret);
+  memset((*buffer), 0, ret);
   while (aux != NULL) {
     if (n == 0) memcpy((*buffer), aux->name, LIST_LEN_NAME);
     else strncat((*buffer), aux->name, LIST_LEN_NAME);
@@ -197,6 +198,7 @@ int get_list(char **buffer) {
     aux = aux->next;
     n++;
   }
+  strncat((*buffer), "\0", 1);
   return nclients * LIST_LEN_NAME;
 }
 
