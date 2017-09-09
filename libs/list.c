@@ -187,13 +187,13 @@ int get_status(int id) {
 
 int get_list(char **buffer) {
   int n = 0;
-  int ret = (sizeof(char) * nclients * LIST_LEN_NAME) + 1;
+  int ret = (sizeof(char) * nclients * LIST_LEN_NAME) + 6;
   client_l aux = client_list;
   (*buffer) = (char*) malloc(ret);
   memset((*buffer), 0, ret);
+  strncpy((*buffer), "list\n", strlen("list\n"));
   while (aux != NULL) {
-    if (n == 0) memcpy((*buffer), aux->name, LIST_LEN_NAME);
-    else strncat((*buffer), aux->name, LIST_LEN_NAME);
+    strncat((*buffer), aux->name, LIST_LEN_NAME);
     strncat((*buffer), "\n", 1);
     aux = aux->next;
     n++;

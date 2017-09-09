@@ -27,7 +27,6 @@ void *thread_routine(void* arg) {
   int       *id = &client->id;
   int       *status = &client->status;
   int       descriptor = client->descriptor;
-  int       ack_flag = 0;
   char      data[BUFFER_LEN];
   char      *request_name;
   char      *name = client->name;
@@ -141,12 +140,15 @@ void *thread_routine(void* arg) {
     else if (*status == ONLINE && strncmp(data, LIST, sizeof(LIST)) == 0) {
       if (DEBUG) fprintf(stderr, "Client %s requests client list:", name);
       ret = get_list(&data_pointer);
-      ret = send_message(descriptor, data_pointer, ret, Z_FLAG );
+      ret = send_message(descriptor, data_pointer, ret, Z_FLAG);
       if (ret == -1) {
         remove_cl(*id);
         pthread_exit(NULL);
       }
-      if (DEBUG) fprintf(stderr, " OK\n");
+      if (DEBUG) {
+        fprintf(stderr, " OK\n");
+        fprintf(stderr, "%s", data_pointer);
+      }
     }
 
     else if (*status == ONLINE && strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
@@ -159,12 +161,15 @@ void *thread_routine(void* arg) {
       }
       *speaker = find_cl_by_name(request_name);
 
+      if (DEBUG) fprintf(stderr, "Try connection with %s:", (*speaker)->name);
+
       // Tentativo di connessione ad un client non presente nella Client List
       if (*speaker == NULL) {
         if (sem_post(sem) == -1) {
           remove_cl(*id);
           pthread_exit(NULL);
         }
+        if (DEBUG) fprintf(stderr, "%s", CLIENT_NOT_EXIST);
         query_size = strlen(CLIENT_NOT_EXIST);
         memset(data, 0, BUFFER_LEN);
         memcpy(data, CLIENT_NOT_EXIST, query_size);
@@ -182,6 +187,7 @@ void *thread_routine(void* arg) {
           remove_cl(*id);
           pthread_exit(NULL);
         }
+        if (DEBUG) fprintf(stderr, "%s", CONNECT_WITH_YOURSELF);
         query_size = strlen(CONNECT_WITH_YOURSELF);
         memset(data, 0, BUFFER_LEN);
         memcpy(data, CONNECT_WITH_YOURSELF, query_size);
@@ -210,7 +216,6 @@ void *thread_routine(void* arg) {
             remove_cl((*speaker)->id);
             pthread_exit(NULL);
           }
-          fprintf(stderr, "Try connection with %s\n", (*speaker)->name);
           data[ret - 1] = '\n';
           ret = send_message((*speaker)->descriptor, data, ret, Z_FLAG | N_FLAG);
           fprintf(stderr, "%d %d %s", (*speaker)->descriptor, ret, data);
@@ -234,9 +239,10 @@ void *thread_routine(void* arg) {
             remove_cl(*id);
             pthread_exit(NULL);
           }
-          query_size = strlen(CLIENT_NOT_EXIST);
+          if (DEBUG) fprintf(stderr, "%s", CLIENT_BUSY);
+          query_size = strlen(CLIENT_BUSY);
           memset(data, 0, BUFFER_LEN);
-          memcpy(data, CLIENT_NOT_EXIST, query_size);
+          memcpy(data, CLIENT_BUSY, query_size);
           ret = send_message(descriptor,data, query_size, Z_FLAG | N_FLAG);
           if (ret == -1) {
             remove_cl(*id);

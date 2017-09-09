@@ -16,6 +16,7 @@
 #define NAME_ALREADY_USED	    "name_used\n"
 #define CONNECT_WITH_YOURSELF "connect_with_yourself\n"
 #define CLIENT_NOT_EXIST      "client_not_exist\n"
+#define CLIENT_BUSY           "client_busy\n"
 #define YES                   "yes\n"
 #define NO                    "no\n"
 
