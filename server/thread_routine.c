@@ -161,7 +161,7 @@ void *thread_routine(void* arg) {
       }
       *speaker = find_cl_by_name(request_name);
 
-      if (DEBUG) fprintf(stderr, "Try connection with %s:", (*speaker)->name);
+      if (DEBUG) fprintf(stderr, "Try client %s connection:", name);
 
       // Tentativo di connessione ad un client non presente nella Client List
       if (*speaker == NULL) {
@@ -169,7 +169,7 @@ void *thread_routine(void* arg) {
           remove_cl(*id);
           pthread_exit(NULL);
         }
-        if (DEBUG) fprintf(stderr, "%s", CLIENT_NOT_EXIST);
+        if (DEBUG) fprintf(stderr, CLIENT_NOT_EXIST);
         query_size = strlen(CLIENT_NOT_EXIST);
         memset(data, 0, BUFFER_LEN);
         memcpy(data, CLIENT_NOT_EXIST, query_size);
