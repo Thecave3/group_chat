@@ -73,7 +73,7 @@ void *thread_routine(void* arg) {
     }
 
     if (strncmp(data, QUIT, strlen(QUIT)) == 0 && *status == BUSY) {
-      fprintf(stderr, "User %s close the chat session:", name);
+      if (DEBUG) fprintf(stderr, "User %s close the chat session:", name);
       if (sem_wait(&(*speaker)->sem) == -1) {
         remove_cl((*speaker)->id);
         pthread_exit(NULL);
@@ -101,7 +101,7 @@ void *thread_routine(void* arg) {
         remove_cl(*id);
         pthread_exit(NULL);
       }
-      fprintf(stderr, " OK\n");
+      if (DEBUG) fprintf(stderr, " OK\n");
     }
 
     else if (*status == BUSY && strncmp(data, NO, strlen(NO)) == 0) {
@@ -132,11 +132,11 @@ void *thread_routine(void* arg) {
         remove_cl(*id);
         pthread_exit(NULL);
       }
-      fprintf(stderr, "NO\n");
+      if (DEBUG) fprintf(stderr, " NO\n");
     }
 
     else if (*status == BUSY) {
-      fprintf(stderr, "YES\n");
+      if (DEBUG) fprintf(stderr, " YES\n");
       ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
       if (ret == -1) {
         if (DEBUG) fprintf(stderr, "Client %s disconnected:", (*speaker)->name);
@@ -162,9 +162,7 @@ void *thread_routine(void* arg) {
         if (DEBUG) fprintf(stderr, " OK\n");
         pthread_exit(NULL);
       }
-      if (DEBUG) {
-        fprintf(stderr, " OK\n");
-      }
+      if (DEBUG) fprintf(stderr, " OK\n");
     }
 
     else if (*status == ONLINE && strncmp(CONNECT, data, (strlen(CONNECT) - 1))== 0) {
