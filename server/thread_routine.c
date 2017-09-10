@@ -35,39 +35,45 @@ void *thread_routine(void* arg) {
 
   memset(data, 0, BUFFER_LEN);
 
-  ret = recv_message(descriptor, data, LIST_LEN_NAME, Z_FLAG | N_FLAG);
+  // Ricevo il nome dal client
+  ret = recv_message(descriptor, data, BUFFER_LEN, N_FLAG);
   if (ret == -1) pthread_exit(NULL);
+
+  data[ret-1] = '\0';
 
   // Verifico se esiste gà un client con tale nome
   if (valid_name(data) == -1) {
     query_size = strlen(NAME_ALREADY_USED);
     memset(data, 0, BUFFER_LEN);
     memcpy(data, NAME_ALREADY_USED, query_size);
-    ret = send_message(descriptor, data, query_size, Z_FLAG | N_FLAG);
+    ret = send_message(descriptor, data, query_size, N_FLAG);
     pthread_exit(NULL);
   }
 
   memset(name, 0, LIST_LEN_NAME);
   memcpy(name, data, LIST_LEN_NAME);
 
+  // Aggiungo il client alla lista dei client connessi
   ret = add_cl(client);
   if (ret == -1) pthread_exit(NULL);
 
   if (DEBUG) fprintf(stderr, "New client %s connected\n", name);
 
+  // Inizio del ciclo sentinella
   while(1) {
 
     memset(data, 0, BUFFER_LEN);
 
-    ret = recv_message(descriptor, data, BUFFER_LEN, Z_FLAG | N_FLAG);
+    ret = recv_message(descriptor, data, BUFFER_LEN, N_FLAG);
     if (ret == -1) {
+      if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
       remove_cl(*id);
+      if (DEBUG) fprintf(stderr, " OK\n");
       pthread_exit(NULL);
     }
 
-    data[ret-1] = '\n';
-
-    if (strncmp(data, QUIT, sizeof(QUIT)) == 0 && *status == BUSY) {
+    if (strncmp(data, QUIT, strlen(QUIT)) == 0 && *status == BUSY) {
+      fprintf(stderr, "User %s close the chat session:", name);
       if (sem_wait(&(*speaker)->sem) == -1) {
         remove_cl((*speaker)->id);
         pthread_exit(NULL);
@@ -78,9 +84,11 @@ void *thread_routine(void* arg) {
         remove_cl((*speaker)->id);
         pthread_exit(NULL);
       }
-      ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, Z_FLAG | N_FLAG);
+      ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
       if (ret == -1) {
+        if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
         remove_cl((*speaker)->id);
+        if (DEBUG) fprintf(stderr, " OK\n");
         pthread_exit(NULL);
       }
       if (sem_wait(sem) == -1) {
@@ -93,65 +101,73 @@ void *thread_routine(void* arg) {
         remove_cl(*id);
         pthread_exit(NULL);
       }
+      fprintf(stderr, " OK\n");
     }
 
-    else if (*status == BUSY && strncmp(data, NO, sizeof(NO)) == 0) {
+    else if (*status == BUSY && strncmp(data, NO, strlen(NO)) == 0) {
       if (sem_wait(&(*speaker)->sem) == -1) {
-          remove_cl(*id);
-          pthread_exit(NULL);
-        }
-        (*speaker)->speaker = NULL;
-        (*speaker)->status = ONLINE;
-        if (sem_post(&(*speaker)->sem) == -1) {
-          remove_cl(*id);
-          pthread_exit(NULL);
-        }
-        ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, Z_FLAG | N_FLAG);
-        if (ret == -1) {
-          remove_cl(*id);
-          pthread_exit(NULL);
-        }
-        if (sem_wait(sem) == -1) {
-          remove_cl(*id);
-          pthread_exit(NULL);
-        }
-        *speaker = NULL;
-        *status = ONLINE;
-        if (sem_post(sem) == -1) {
-          remove_cl(*id);
-          pthread_exit(NULL);
-        }
+        remove_cl(*id);
+        pthread_exit(NULL);
+      }
+      (*speaker)->speaker = NULL;
+      (*speaker)->status = ONLINE;
+      if (sem_post(&(*speaker)->sem) == -1) {
+        remove_cl(*id);
+        pthread_exit(NULL);
+      }
+      ret = send_message((*speaker)->descriptor, data, strlen(NO), N_FLAG);
+      if (ret == -1) {
+        if (DEBUG) fprintf(stderr, "Client %s disconnected:", (*speaker)->name);
+        remove_cl((*speaker)->id);
+        if (DEBUG) fprintf(stderr, " OK\n");
+        pthread_exit(NULL);
+      }
+      if (sem_wait(sem) == -1) {
+        remove_cl(*id);
+        pthread_exit(NULL);
+      }
+      *speaker = NULL;
+      *status = ONLINE;
+      if (sem_post(sem) == -1) {
+        remove_cl(*id);
+        pthread_exit(NULL);
+      }
+      fprintf(stderr, "NO\n");
     }
 
     else if (*status == BUSY) {
-      ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, Z_FLAG | N_FLAG);
+      fprintf(stderr, "YES\n");
+      ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
       if (ret == -1) {
+        if (DEBUG) fprintf(stderr, "Client %s disconnected:", (*speaker)->name);
         remove_cl((*speaker)->id);
+        if (DEBUG) fprintf(stderr, " OK\n");
       }
     }
 
-    else if (*status == ONLINE && strncmp(data, QUIT, sizeof(QUIT)) == 0) {
+    else if (*status == ONLINE && strncmp(data, QUIT, strlen(QUIT)) == 0) {
       if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
       remove_cl(*id);
       if (DEBUG) fprintf(stderr, " OK\n");
       pthread_exit(NULL);
     }
 
-    else if (*status == ONLINE && strncmp(data, LIST, sizeof(LIST)) == 0) {
+    else if (*status == ONLINE && strncmp(data, LIST, strlen(LIST)) == 0) {
       if (DEBUG) fprintf(stderr, "Client %s requests client list:", name);
       ret = get_list(&data_pointer);
       ret = send_message(descriptor, data_pointer, ret, Z_FLAG);
       if (ret == -1) {
+        if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
         remove_cl(*id);
+        if (DEBUG) fprintf(stderr, " OK\n");
         pthread_exit(NULL);
       }
       if (DEBUG) {
         fprintf(stderr, " OK\n");
-        fprintf(stderr, "%s", data_pointer);
       }
     }
 
-    else if (*status == ONLINE && strncmp(CONNECT, data, (sizeof(CONNECT) - 1))== 0) {
+    else if (*status == ONLINE && strncmp(CONNECT, data, (strlen(CONNECT) - 1))== 0) {
 
       data[ret - 1] = '\0';
       request_name = data + sizeof(CONNECT) - 1;
@@ -160,6 +176,7 @@ void *thread_routine(void* arg) {
         pthread_exit(NULL);
       }
       *speaker = find_cl_by_name(request_name);
+      data[ret - 1] = '\n';
 
       if (DEBUG) fprintf(stderr, "Try client %s connection:", name);
 
@@ -173,9 +190,11 @@ void *thread_routine(void* arg) {
         query_size = strlen(CLIENT_NOT_EXIST);
         memset(data, 0, BUFFER_LEN);
         memcpy(data, CLIENT_NOT_EXIST, query_size);
-        ret = send_message(descriptor, data, query_size, Z_FLAG | N_FLAG);
+        ret = send_message(descriptor, data, query_size, N_FLAG);
         if (ret == -1) {
+          if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
           remove_cl(*id);
+          if (DEBUG) fprintf(stderr, " OK\n");
           pthread_exit(NULL);
         }
       }
@@ -191,9 +210,11 @@ void *thread_routine(void* arg) {
         query_size = strlen(CONNECT_WITH_YOURSELF);
         memset(data, 0, BUFFER_LEN);
         memcpy(data, CONNECT_WITH_YOURSELF, query_size);
-        ret = send_message(descriptor,data ,query_size, Z_FLAG | N_FLAG);
+        ret = send_message(descriptor,data ,query_size, N_FLAG);
         if (ret == -1) {
+          if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
           remove_cl(*id);
+          if (DEBUG) fprintf(stderr, " OK\n");
           pthread_exit(NULL);
         }
       }
@@ -217,10 +238,11 @@ void *thread_routine(void* arg) {
             pthread_exit(NULL);
           }
           data[ret - 1] = '\n';
-          ret = send_message((*speaker)->descriptor, data, ret, Z_FLAG | N_FLAG);
-          fprintf(stderr, "%d %d %s", (*speaker)->descriptor, ret, data);
+          ret = send_message((*speaker)->descriptor, data, ret, N_FLAG);
           if (ret == -1) {
-            remove_cl(*id);
+            if (DEBUG) fprintf(stderr, "Client %s disconnected:", (*speaker)->name);
+            remove_cl((*speaker)->id);
+            if (DEBUG) fprintf(stderr, " OK\n");
             pthread_exit(NULL);
           }
         }
@@ -234,7 +256,7 @@ void *thread_routine(void* arg) {
             pthread_exit(NULL);
           }
           *speaker = NULL;
-          *status = BUSY;
+          *status = ONLINE;
           if (sem_post(sem) == -1) {
             remove_cl(*id);
             pthread_exit(NULL);
@@ -243,18 +265,16 @@ void *thread_routine(void* arg) {
           query_size = strlen(CLIENT_BUSY);
           memset(data, 0, BUFFER_LEN);
           memcpy(data, CLIENT_BUSY, query_size);
-          ret = send_message(descriptor,data, query_size, Z_FLAG | N_FLAG);
+          ret = send_message(descriptor,data, query_size, N_FLAG);
           if (ret == -1) {
+            if (DEBUG) fprintf(stderr, "Client %s disconnected:", name);
             remove_cl(*id);
+            if (DEBUG) fprintf(stderr, " OK\n");
             pthread_exit(NULL);
           }
         }
       }
     }
-    fprintf(stderr, "%s:\n%d\n%d\n%d\n", client->name,
-            client->id,
-            client->status,
-            client->descriptor);
   }
   pthread_exit(NULL);
 }

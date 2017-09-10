@@ -42,8 +42,10 @@ void* receiveMessage() {
   size_t request_command_len = strlen(request_command);
   char* already_used_alert = NAME_ALREADY_USED;
   size_t already_used_alert_len = strlen(already_used_alert);
-  char* client_not_exist= CLIENT_NOT_EXIST;
+  char* client_not_exist = CLIENT_NOT_EXIST;
   size_t client_not_exist_len = strlen(client_not_exist);
+  char* client_busy = CLIENT_BUSY;
+  size_t client_busy_len = strlen(CLIENT_BUSY);
   char* list = LIST;
   size_t list_len = strlen(list);
 
@@ -110,6 +112,9 @@ void* receiveMessage() {
         onChat = 0;
       } else if (strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione utente non connesso
         printf("\r%sErrore, l'utente scelto non esiste sul server%s\n",KRED,KNRM);
+        onChat = 0;
+      } else if (strncmp(buf,client_busy,client_busy_len)==0) { // Gestione utente non connesso
+        printf("\r%sErrore, l'utente scelto è impegnato in un altra conversazione%s\n",KRED,KNRM);
         onChat = 0;
       }
       shouldWait = 0;

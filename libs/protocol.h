@@ -34,6 +34,7 @@
 //In caso di CTRL-C o di altri segnali il client proverà lo stesso a inviare la stringa quit prima di chiudersi.
 //L'unico caso non gestibile di invio al server è l'assenza di connessione.
 
+void server_init(int* sock_desc, struct sockaddr_in* sock_addr);
 int recv_message(int socket_desc, char* buffer,  int buffer_len, int flags);
 int send_message(int socket_desc, char* buffer, int buffer_len, int flags);
 

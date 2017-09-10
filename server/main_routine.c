@@ -16,20 +16,6 @@
 #include "../libs/list.h"
 #include "../libs/protocol.h"
 
-#define MAX_CONN_QUEUE 10
-
-/* Routine di inizializzazione del server */
-void server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
-  if (!list_init()) exit(EXIT_FAILURE);
-  *sock_desc = socket(AF_INET , SOCK_STREAM , 0);
-  if (*sock_desc == -1) exit(EXIT_FAILURE);
-  sock_addr->sin_family = AF_INET;
-  sock_addr->sin_addr.s_addr = INADDR_ANY;
-  sock_addr->sin_port = htons(SERVER_PORT);
-  if (bind(*sock_desc,(struct sockaddr *)sock_addr ,sizeof(*sock_addr)) < 0) exit(EXIT_FAILURE);
-  if(listen(*sock_desc , MAX_CONN_QUEUE)) exit(EXIT_FAILURE);
-}
-
 /* Funzione di terminazione del server */
 void server_exit () {
   free_list();
@@ -49,6 +35,7 @@ int main_routine(int argc, char const *argv[]) {
   // Configurazione del Server
   if (atexit(server_exit) != 0) exit(EXIT_FAILURE);
   if (signal(SIGINT, exit) == SIG_ERR) exit(EXIT_FAILURE);
+  if (!list_init()) exit(EXIT_FAILURE);
 
   server_init(&server_desc, &server_addr);
   fprintf(stderr, "Server Started\n");

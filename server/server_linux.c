@@ -13,7 +13,7 @@ int 	main(int argc, char const *argv[]) {
   pid_t    pid;                                                                   // Variabile per il salvataggio del pid del processo in esecuzione
   int      check;                                                                 // Variabile per il controllo di errori da parte dell'utente
   int      check_pid;
-  int      i;                                                             // Variabile per il confronto dei pid;
+  int      i;                                                                     // Variabile per il confronto dei pid;
   char     buffer[64];                                                            // Buffer di allocazione per le varie stringhe usate nel programma
 
   pid = getpid();                                                                 // Ottengo il pid del processo corrente
@@ -29,7 +29,7 @@ int 	main(int argc, char const *argv[]) {
   check_pid = atoi(buffer);                                                       // Converto il contenuto di fp (pid) in un intero e lo salvo in check_pid
   pclose(fp);                                                                     // Chiudo fp
 
-  for (i = 1; i < argc; i++) {                                                // Scorro gli elementi passati come parametri del programma da terminale
+  for (i = 1; i < argc; i++) {                                                    // Scorro gli elementi passati come parametri del programma da terminale
     if(strcmp(argv[i], "--start") == 0) {                                         // Se uno dei parametri è uguale a "--start"
       if (pid != check_pid) {                                                     // Se il pid del programma è diverso dall'ultima istanza del server avviata
         fprintf(stderr, "Server already started\n");                              // informo l'utente che il server è già stato avviato
@@ -41,7 +41,7 @@ int 	main(int argc, char const *argv[]) {
         perror("Fork() Fail");                                                    // Stampo un messaggio di errore
         exit(EXIT_FAILURE);                                                       // Termino il processo
       }
-      if (pid > 0) main_routine(argc,argv);                                     // Se il pid è maggiore di 0 sono nel processo figlio quindi avvio la routine del server
+      if (pid > 0) main_routine(argc,argv);                                       // Se il pid è maggiore di 0 sono nel processo figlio quindi avvio la routine del server
       check++;                                                                    // Incremento la variabile check
       break;                                                                      // Interrompo il ciclo
     }

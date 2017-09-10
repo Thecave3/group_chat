@@ -199,7 +199,7 @@ int get_list(char **buffer) {
     n++;
   }
   strncat((*buffer), "\0", 1);
-  return nclients * LIST_LEN_NAME;
+  return ret;
 }
 
 void free_list() {
