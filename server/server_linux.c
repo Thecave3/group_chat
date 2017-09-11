@@ -18,8 +18,7 @@ int 	main(int argc, char const *argv[]) {
 
   pid = getpid();
   check = 0;
-  sprintf(buffer, "ps -ef | grep %s | grep -v grep | awk '{print $2}'",
-                  argv[0]);
+  sprintf(buffer, "ps -ef | grep %s | grep -v grep | awk '{print $2}'", argv[0]);
   fp = popen(buffer, "r");
   if (fp == NULL) {
     perror("Popen() Fail");

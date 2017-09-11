@@ -12,6 +12,10 @@
 #define ONLINE 1
 #define BUSY   0
 
+#define EXTINTED  2
+#define ALIVE     1
+#define ZOMBIE    0
+
 int       nclients;
 int	      id_clients;
 client_l  client_list;
@@ -27,6 +31,7 @@ int list_init() {
 int add_cl(client_l client) {
   client->id = id_clients;
   client->status = ONLINE;
+  client->alive = ALIVE;
   if (sem_init(&client->sem, 0, 1) == -1) return -1;
 	if (sem_wait(&client_list_semaphore) == -1) return -1;
   if (nclients == 0) {
@@ -74,9 +79,9 @@ int remove_cl(int id) {
         aux = bux->next;
         aux->prev = bux->prev;
       }
+      bux->alive = EXTINTED;
 	    nclients--;
       ret++;
-      free(bux);
       break;
     }
 		aux = aux->next;

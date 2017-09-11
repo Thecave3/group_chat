@@ -8,6 +8,7 @@ typedef struct client_s {
   int     id;
   int     descriptor;
   int     status;
+  int     alive;
   sem_t   sem;
   char    name[LIST_LEN_NAME];
   struct  client_s* speaker;
