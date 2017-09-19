@@ -216,6 +216,7 @@ void *thread_routine(void* arg) {
         *speaker = NULL;
         if (sem_post(sem) == -1) {
           remove_cl(*id);
+          write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
           close_logger(log);
           pthread_exit(NULL);
         }

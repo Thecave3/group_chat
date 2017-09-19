@@ -56,6 +56,7 @@ void server_exit () {
     thread_list = thread_list->next;
     free(aux);
   }
+  write_logger(logger_server,"Il server è stato terminato\n");
   close_logger(logger_server);
 }
 
@@ -66,9 +67,11 @@ void garbage_collector (int ignored) {
     if (cux->thread_arg->alive == ALIVE) cux->thread_arg->alive = ZOMBIE;
     else {
       if (cux->thread_arg->alive == ZOMBIE) {
-        write_logger(logger_server,"Il Thread del client %s è stato ucciso per inattività\n", cux->thread_arg->name);
         ret = pthread_cancel(*(cux->thread_handler));
-        if (ret != 0) exit(EXIT_SUCCESS);
+        if (ret != 0) exit(EXIT_FAILURE);
+        write_logger(cux->thread_arg->log,"Il client è stato terminato per inattività\n");
+        write_logger(logger_server,"Il Thread del client %s è stato ucciso per inattività\n", cux->thread_arg->name);
+        close_logger(cux->thread_arg->log);
       }
       remove_cl(cux->thread_arg->id);
       ret = shutdown (cux->thread_arg->descriptor, 2);
@@ -88,10 +91,7 @@ void garbage_collector (int ignored) {
         cux->next = bux->next;
       }
       if(bux->thread_arg->alive == ORPHAN) write_logger(logger_server,"Le risorse del client John Doe sono state liberate\n", bux->thread_arg->name);
-      else {
-        write_logger(logger_server,"Le risorse del client %s sono state liberate\n", bux->thread_arg->name);
-        close_logger(bux->thread_arg->log);
-      }
+      else write_logger(logger_server,"Le risorse del client %s sono state liberate\n", bux->thread_arg->name);
       free(bux);
     }
     cux = cux->next;
@@ -112,11 +112,17 @@ int main_routine(int argc, char const *argv[], int folder) {
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) exit(EXIT_FAILURE);
   if (!list_init()) exit(EXIT_FAILURE);
 
+  write_logger(logger_server,"Setup dei segnali completato\n");
+
   thread_list = NULL;
 
   alarm(20);
 
+  write_logger(logger_server,"Garbage Collector avviato\n");
+
   server_init(&server_desc, &server_addr);
+
+  write_logger(logger_server,"Inizializzazione connessioni completata\n");
 
   client_addr_len = sizeof(client_addr);
 
@@ -125,6 +131,7 @@ int main_routine(int argc, char const *argv[], int folder) {
     memset(&client_addr, 0, sizeof(client_addr));
     client_desc = accept(server_desc, (struct sockaddr *)&client_addr, (socklen_t*)&client_addr_len);
     if (client_desc < 0) continue;
+    write_logger(logger_server,"Nuova connessione in ingresso\n");
     thread_arg = malloc(sizeof(client_t));
     init_client_thread = malloc(sizeof(pthread_t));
     thread_list_element = malloc(sizeof(thread_t));
@@ -142,6 +149,7 @@ int main_routine(int argc, char const *argv[], int folder) {
     }
     ret = pthread_create(init_client_thread, NULL, thread_routine, (void*) thread_arg);
     if (ret != 0) continue;
+    write_logger(logger_server,"Nuovo Thread avviato\n");
     ret = pthread_detach(*init_client_thread);
     if (ret != 0) continue;
   }
