@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,15 +15,18 @@
 #include "main_routine.h"
 #include "thread_routine.h"
 #include "../libs/list.h"
+#include "../libs/logger.h"
 #include "../libs/protocol.h"
 
 #define DEBUG 1
 #define BUFFER_LEN 1024
+#define PATH "log"
 
 void *thread_routine(void* arg) {
 
   client_l  client = (client_l) arg;
   client_l  *speaker = &client->speaker;
+  logger_t  log;
   int       ret;
   int       query_size;
   int       descriptor = client->descriptor;
@@ -59,14 +63,19 @@ void *thread_routine(void* arg) {
   ret = add_cl(client);
   if (ret == -1) pthread_exit(NULL);
 
+  log = new_logger(name, "log");
+
+  write_logger(log, "Il client si è connesso\n");
+
   // Inizio del ciclo sentinella
   while(1) {
 
     memset(data, 0, BUFFER_LEN);
-
     ret = recv_message(descriptor, data, BUFFER_LEN, N_FLAG);
     if (ret == -1) {
       remove_cl(*id);
+      write_logger(log, "Il client si è disconnesso in modo anomalo\n");
+      close_logger(log);
       pthread_exit(NULL);
     }
     *alive = 1;
@@ -74,55 +83,57 @@ void *thread_routine(void* arg) {
     if (strncmp(data, QUIT, strlen(QUIT)) == 0 && *status == BUSY) {
       if (sem_wait(&(*speaker)->sem) == -1) {
         remove_cl((*speaker)->id);
-        pthread_exit(NULL);
       }
       (*speaker)->speaker = NULL;
       (*speaker)->status = ONLINE;
       if (sem_post(&(*speaker)->sem) == -1) {
         remove_cl((*speaker)->id);
-        pthread_exit(NULL);
       }
       ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
       if (ret == -1) {
         remove_cl((*speaker)->id);
-        pthread_exit(NULL);
       }
       if (sem_wait(sem) == -1) {
         remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
+        close_logger(log);
         pthread_exit(NULL);
       }
       *speaker = NULL;
       *status = ONLINE;
       if (sem_post(sem) == -1) {
         remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
+        close_logger(log);
         pthread_exit(NULL);
       }
     }
 
     else if (*status == BUSY && strncmp(data, NO, strlen(NO)) == 0) {
       if (sem_wait(&(*speaker)->sem) == -1) {
-        remove_cl(*id);
-        pthread_exit(NULL);
+        remove_cl((*speaker)->id);
       }
       (*speaker)->speaker = NULL;
       (*speaker)->status = ONLINE;
       if (sem_post(&(*speaker)->sem) == -1) {
-        remove_cl(*id);
-        pthread_exit(NULL);
+        remove_cl((*speaker)->id);
       }
       ret = send_message((*speaker)->descriptor, data, strlen(NO), N_FLAG);
       if (ret == -1) {
         remove_cl((*speaker)->id);
-        pthread_exit(NULL);
       }
       if (sem_wait(sem) == -1) {
         remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
+        close_logger(log);
         pthread_exit(NULL);
       }
       *speaker = NULL;
       *status = ONLINE;
       if (sem_post(sem) == -1) {
         remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
+        close_logger(log);
         pthread_exit(NULL);
       }
     }
@@ -137,24 +148,31 @@ void *thread_routine(void* arg) {
 
     else if (*status == ONLINE && strncmp(data, QUIT, strlen(QUIT)) == 0) {
       remove_cl(*id);
+      write_logger(log, "Il client si è disconnesso\n");
+      close_logger(log);
       pthread_exit(NULL);
     }
 
     else if (*status == ONLINE && strncmp(data, LIST, strlen(LIST)) == 0) {
       ret = get_list(&data_pointer);
       ret = send_message(descriptor, data_pointer, ret, Z_FLAG);
+      write_logger(log, "Richiesta inoltro della lista dei client\n");
       if (ret == -1) {
         remove_cl(*id);
+        write_logger(log, "Il client si è disconnesso in modo anomalo\n");
+        close_logger(log);
         pthread_exit(NULL);
       }
     }
 
     else if (*status == ONLINE && strncmp(CONNECT, data, (strlen(CONNECT) - 1))== 0) {
-
       data[ret - 1] = '\0';
       request_name = data + sizeof(CONNECT) - 1;
+      write_logger(log, "Richiesta di connessione per un altro client..\n");
       if (sem_wait(sem) == -1) {
         remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
+        close_logger(log);
         pthread_exit(NULL);
       }
       *speaker = find_cl_by_name(request_name);
@@ -164,6 +182,8 @@ void *thread_routine(void* arg) {
       if (*speaker == NULL) {
         if (sem_post(sem) == -1) {
           remove_cl(*id);
+          write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
+          close_logger(log);
           pthread_exit(NULL);
         }
         query_size = strlen(CLIENT_NOT_EXIST);
@@ -172,8 +192,11 @@ void *thread_routine(void* arg) {
         ret = send_message(descriptor, data, query_size, N_FLAG);
         if (ret == -1) {
           remove_cl(*id);
+          write_logger(log, "Il client si è disconnesso in modo anomalo\n");
+          close_logger(log);
           pthread_exit(NULL);
         }
+        write_logger(log, "\t..il client richiesto non è connesso\n");
       }
 
       // Tentativo di connessione con se stessi
@@ -181,6 +204,7 @@ void *thread_routine(void* arg) {
         *speaker = NULL;
         if (sem_post(sem) == -1) {
           remove_cl(*id);
+          close_logger(log);
           pthread_exit(NULL);
         }
         query_size = strlen(CONNECT_WITH_YOURSELF);
@@ -189,8 +213,11 @@ void *thread_routine(void* arg) {
         ret = send_message(descriptor,data ,query_size, N_FLAG);
         if (ret == -1) {
           remove_cl(*id);
+          write_logger(log, "Il client si è disconnesso in modo anomalo\n");
+          close_logger(log);
           pthread_exit(NULL);
         }
+        write_logger(log, "\t..tentativo di connessione con se stessi\n");
       }
 
       // Tentativo di connessione ad un altro client presente nella Client List
@@ -198,39 +225,44 @@ void *thread_routine(void* arg) {
         *status = BUSY;
         if (sem_post(sem) == -1) {
           remove_cl(*id);
+          write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
+          close_logger(log);
           pthread_exit(NULL);
         }
         if (sem_wait(&(*speaker)->sem) == -1) {
           remove_cl((*speaker)->id);
-          pthread_exit(NULL);
         }
         if ((*speaker)->status == ONLINE) {
           (*speaker)->speaker = client;
           (*speaker)->status = BUSY;
           if (sem_post(&(*speaker)->sem) == -1) {
             remove_cl((*speaker)->id);
-            pthread_exit(NULL);
           }
           data[ret - 1] = '\n';
           ret = send_message((*speaker)->descriptor, data, ret, N_FLAG);
           if (ret == -1) {
             remove_cl((*speaker)->id);
+            write_logger(log, "Il client si è disconnesso in modo anomalo\n");
+            close_logger(log);
             pthread_exit(NULL);
           }
         }
         else {
           if (sem_post(&(*speaker)->sem) == -1) {
             remove_cl((*speaker)->id);
-            pthread_exit(NULL);
           }
           if (sem_wait(sem) == -1) {
             remove_cl(*id);
+            write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
+            close_logger(log);
             pthread_exit(NULL);
           }
           *speaker = NULL;
           *status = ONLINE;
           if (sem_post(sem) == -1) {
             remove_cl(*id);
+            write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
+            close_logger(log);
             pthread_exit(NULL);
           }
           query_size = strlen(CLIENT_BUSY);
@@ -239,6 +271,8 @@ void *thread_routine(void* arg) {
           ret = send_message(descriptor,data, query_size, N_FLAG);
           if (ret == -1) {
             remove_cl(*id);
+            write_logger(log, "Il client si è disconnesso in modo anomalo\n");
+            close_logger(log);
             pthread_exit(NULL);
           }
         }

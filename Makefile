@@ -1,7 +1,7 @@
 CC = gcc -Wall
 OPT = -O0
 LDFLAGS = -ggdb -lpthread
-S_COMMON = server/main_routine.c libs/protocol.c libs/list.c server/thread_routine.c
+S_COMMON = server/main_routine.c libs/logger.c libs/protocol.c libs/list.c server/thread_routine.c
 C_COMMON = libs/protocol.c
 CMN = libs/common.h
 
