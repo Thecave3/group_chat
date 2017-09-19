@@ -1,8 +1,10 @@
 #include <time.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <sys/stat.h>
 #include "logger.h"
 
@@ -25,8 +27,8 @@ logger_t new_logger(char *name, char* folder) {
     if (stat(logger->path, &st) == -1) {
       if(mkdir(logger->path, 0700) == -1) return NULL;
     }
+    strncat(logger->path, "/",PATH_LEN);
   }
-  strncat(logger->path, "/",PATH_LEN);
   strncat(logger->path, name, PATH_LEN);
   strncat(logger->path, " - ",PATH_LEN);
   strftime(timeString, 64, "%c", time_info);
@@ -49,16 +51,20 @@ logger_t new_logger(char *name, char* folder) {
   return logger;
 }
 
-int write_logger(logger_t logger, char* buffer) {
+int write_logger(logger_t logger, const char* format, ...) {
+  va_list args;
   time_t current_time;
   struct tm *time_info;
   char timeString[16];
   int timeStringSize;
   int ret = 0;
+  char buffer[4096];
 
+  va_start(args, format);
+  vsnprintf(buffer, sizeof(buffer), format, args);
+  va_end(args);
   time(&current_time);
   time_info = localtime(&current_time);
-
   strftime(timeString, 16, "%H:%M:%S - ", time_info);
   timeStringSize = strlen(timeString);
   if (sem_wait(&logger->semaphore) == -1) return -1;

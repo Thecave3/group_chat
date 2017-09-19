@@ -29,6 +29,7 @@ void *thread_routine(void* arg) {
   logger_t  log;
   int       ret;
   int       query_size;
+  int       first_time = 0;
   int       descriptor = client->descriptor;
   int       *id = &client->id;
   int       *status = &client->status;
@@ -53,6 +54,7 @@ void *thread_routine(void* arg) {
     memset(data, 0, BUFFER_LEN);
     memcpy(data, NAME_ALREADY_USED, query_size);
     ret = send_message(descriptor, data, query_size, N_FLAG);
+    *alive = ORPHAN;
     pthread_exit(NULL);
   }
 
@@ -63,7 +65,8 @@ void *thread_routine(void* arg) {
   ret = add_cl(client);
   if (ret == -1) pthread_exit(NULL);
 
-  log = new_logger(name, "log");
+  client->log = new_logger(name, "log");
+  log = client->log;
 
   write_logger(log, "Il client si è connesso\n");
 
@@ -78,9 +81,11 @@ void *thread_routine(void* arg) {
       close_logger(log);
       pthread_exit(NULL);
     }
-    *alive = 1;
+    *alive = ALIVE;
 
     if (strncmp(data, QUIT, strlen(QUIT)) == 0 && *status == BUSY) {
+      write_logger((*speaker)->log, "Il client %s ha terminato la chat\n", name);
+      write_logger(log, "Il client ha terminato la chat\n", name);
       if (sem_wait(&(*speaker)->sem) == -1) {
         remove_cl((*speaker)->id);
       }
@@ -107,9 +112,12 @@ void *thread_routine(void* arg) {
         close_logger(log);
         pthread_exit(NULL);
       }
+      first_time = 0;
     }
 
     else if (*status == BUSY && strncmp(data, NO, strlen(NO)) == 0) {
+      write_logger((*speaker)->log, "Il client %s ha rifiutato la chat\n", name);
+      write_logger(log, "Il client ha rifiutato la chat\n", name);
       if (sem_wait(&(*speaker)->sem) == -1) {
         remove_cl((*speaker)->id);
       }
@@ -139,8 +147,13 @@ void *thread_routine(void* arg) {
     }
 
     else if (*status == BUSY) {
+      if (first_time == 0 && strncmp(data, YES, strlen(YES)) == 0) {
+        write_logger(log, "Il client ha accettato la chat\n");
+        write_logger((*speaker)->log, "Il client %s ha accettato la chat\n", name);
+        first_time++;
+      }
       ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
-      (*speaker)->alive = 1;
+      (*speaker)->alive = ALIVE;
       if (ret == -1) {
         remove_cl((*speaker)->id);
       }
@@ -168,7 +181,6 @@ void *thread_routine(void* arg) {
     else if (*status == ONLINE && strncmp(CONNECT, data, (strlen(CONNECT) - 1))== 0) {
       data[ret - 1] = '\0';
       request_name = data + sizeof(CONNECT) - 1;
-      write_logger(log, "Richiesta di connessione per un altro client..\n");
       if (sem_wait(sem) == -1) {
         remove_cl(*id);
         write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
@@ -196,7 +208,7 @@ void *thread_routine(void* arg) {
           close_logger(log);
           pthread_exit(NULL);
         }
-        write_logger(log, "\t..il client richiesto non è connesso\n");
+        write_logger(log, "Richiesta di connessione verso un client inesistente\n");
       }
 
       // Tentativo di connessione con se stessi
@@ -217,7 +229,7 @@ void *thread_routine(void* arg) {
           close_logger(log);
           pthread_exit(NULL);
         }
-        write_logger(log, "\t..tentativo di connessione con se stessi\n");
+        write_logger(log, "Tentativo di connessione con se stessi\n");
       }
 
       // Tentativo di connessione ad un altro client presente nella Client List
@@ -246,6 +258,8 @@ void *thread_routine(void* arg) {
             close_logger(log);
             pthread_exit(NULL);
           }
+          write_logger(log, "Tentativo di connessione con %s\n", (*speaker)->name);
+          write_logger((*speaker)->log, "Tentativo di connessione da parte di %s\n", name);
         }
         else {
           if (sem_post(&(*speaker)->sem) == -1) {
@@ -275,6 +289,7 @@ void *thread_routine(void* arg) {
             close_logger(log);
             pthread_exit(NULL);
           }
+          write_logger(log, "Tentativo di connessione con un client occupato\n");
         }
       }
     }

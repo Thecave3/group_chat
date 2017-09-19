@@ -1,19 +1,21 @@
 #ifndef LIST_H
 #define LIST_H
 #include <semaphore.h>
+#include "logger.h"
 
 #define LIST_LEN_NAME 11
 
 typedef struct client_s {
-  int     id;
-  int     descriptor;
-  int     status;
-  int     alive;
-  sem_t   sem;
-  char    name[LIST_LEN_NAME];
-  struct  client_s* speaker;
-  struct  client_s* next;
-  struct  client_s* prev;
+  int       id;
+  int       descriptor;
+  int       status;
+  int       alive;
+  sem_t     sem;
+  logger_t  log;
+  char      name[LIST_LEN_NAME];
+  struct client_s*  speaker;
+  struct client_s*  next;
+  struct client_s*  prev;
 } client_t;
 typedef client_t* client_l;
 

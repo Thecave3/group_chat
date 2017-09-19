@@ -13,7 +13,7 @@ typedef struct logger_s {
 typedef logger_c* logger_t;
 
 logger_t new_logger(char *name, char* folder);
-int write_logger(logger_t logger, char* buffer);
+int write_logger(logger_t logger, const char* format, ...);
 void close_logger(logger_t logger);
 
 #endif

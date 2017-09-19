@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include "main_routine.h"
 #include "thread_routine.h"
+#include "../libs/logger.h"
 #include "../libs/list.h"
 #include "../libs/protocol.h"
 
@@ -45,6 +46,8 @@ thread_l aux;
 thread_l bux;
 thread_l cux;
 
+logger_t logger_server;
+
 /* Funzione di terminazione del server */
 void server_exit () {
   free_list();
@@ -53,6 +56,7 @@ void server_exit () {
     thread_list = thread_list->next;
     free(aux);
   }
+  close_logger(logger_server);
 }
 
 void garbage_collector (int ignored) {
@@ -62,7 +66,7 @@ void garbage_collector (int ignored) {
     if (cux->thread_arg->alive == ALIVE) cux->thread_arg->alive = ZOMBIE;
     else {
       if (cux->thread_arg->alive == ZOMBIE) {
-        fprintf(stderr, "thread %s deleated\n",  cux->thread_arg->name);
+        write_logger(logger_server,"Il Thread del client %s è stato ucciso per inattività\n", cux->thread_arg->name);
         ret = pthread_cancel(*(cux->thread_handler));
         if (ret != 0) exit(EXIT_SUCCESS);
       }
@@ -83,7 +87,11 @@ void garbage_collector (int ignored) {
         cux = bux->prev;
         cux->next = bux->next;
       }
-      fprintf(stderr, "Client %s was kicked in the ass\n", bux->thread_arg->name);
+      if(bux->thread_arg->alive == ORPHAN) write_logger(logger_server,"Le risorse del client John Doe sono state liberate\n", bux->thread_arg->name);
+      else {
+        write_logger(logger_server,"Le risorse del client %s sono state liberate\n", bux->thread_arg->name);
+        close_logger(bux->thread_arg->log);
+      }
       free(bux);
     }
     cux = cux->next;
@@ -93,7 +101,9 @@ void garbage_collector (int ignored) {
 
 int main_routine(int argc, char const *argv[], int folder) {
 
-  daemon(1,0);
+  if (daemon(1,0)) exit(EXIT_FAILURE);
+
+  logger_server = new_logger("Server_LOG", NULL);
 
   // Configurazione del Server
   if (atexit(server_exit) != 0) exit(EXIT_FAILURE);
