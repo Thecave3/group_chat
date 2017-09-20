@@ -28,6 +28,7 @@ void kill_handler() {
 }
 
 // Gestione SIGPIPE
+// se il server è andato down il client si chiude
 void kill_pipe() {
   shouldStop = 1;
   printf("Chiusura connessione effettuata dal server, bye bye\n");
@@ -99,7 +100,7 @@ void* receiveMessage() {
     }
 
     if (strncmp(buf,already_used_alert,already_used_alert_len)==0) { // Gestione name already used
-      printf("\r%sErrore, nome già in uso sul server\n",KRED);
+      printf("%sErrore, nome già in uso sul server\n",KRED);
       shouldStop = 1;
       exit(EXIT_SUCCESS);
     }
@@ -111,10 +112,10 @@ void* receiveMessage() {
         printf("L'utente ha rifiutato la chat!\n");
         onChat = 0;
       } else if (strncmp(buf,client_not_exist,client_not_exist_len)==0) { // Gestione utente non connesso
-        printf("\r%sErrore, l'utente scelto non esiste sul server%s\n",KRED,KNRM);
+        printf("%sErrore, l'utente scelto non esiste sul server%s\n",KRED,KNRM);
         onChat = 0;
       } else if (strncmp(buf,client_busy,client_busy_len)==0) { // Gestione utente non connesso
-        printf("\r%sErrore, l'utente scelto è impegnato in un altra conversazione%s\n",KRED,KNRM);
+        printf("%sErrore, l'utente scelto è impegnato in un altra conversazione%s\n",KRED,KNRM);
         onChat = 0;
       }
       shouldWait = 0;
@@ -125,26 +126,27 @@ void* receiveMessage() {
     }
 
     if (!onChat && strncmp(buf,list,list_len)==0) { // Gestione lista
-      printf("\rLista utenti connessi:\n");
+      printf("Lista utenti connessi:\n");
       shouldWait = 0;
     } else if (!onChat && strncmp(buf,request_command,request_command_len)==0) { // Gestione richiesta connessione
       shouldWait = 1;
-      printf("\rHai una richiesta di connessione da parte di un altro utente!\n");
+      printf("\nHai una richiesta di connessione da parte di un altro utente!\n");
       printf("Rispondi %syes%s per accettare oppure %sno%s per rifiutare\n",KGRN,KNRM,KRED,KNRM);
       onChat = 1;
       isRequest = 1;
       shouldWait = 0;
     } else if (strncmp(buf,close_command,close_command_len)==0) { // Gestione chiusura
       if(!onChat){
-        fprintf(stderr, "Il server ha chiuso la connessione\n");
+        fprintf(stdout, "Il server ha chiuso la connessione\n");
         exit(EXIT_SUCCESS);
       }else{
-        fprintf(stderr, "Sessione di chat terminata dall'altro utente.\n");
         onChat = 0;
+        fprintf(stdout, "Sessione di chat terminata dall'altro utente.\n");
+        display_commands();
       }
     } else { // Stampa messaggio
       buf[bytes_read] = '\0';
-      bytes_read>0? printf("\r==> %s\n", buf) : printf("\r");
+      bytes_read>0? printf("==> %s\n", buf) : printf("\n");
       ERROR_HELPER(fflush(stdout),"Errore fflush");
     }
     printf(">> ");
