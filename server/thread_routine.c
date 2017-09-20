@@ -17,8 +17,8 @@
 #include "../libs/list.h"
 #include "../libs/logger.h"
 #include "../libs/protocol.h"
+#include "../libs/server_common.h"
 
-#define DEBUG 1
 #define BUFFER_LEN 1024
 #define PATH "log"
 
@@ -65,7 +65,7 @@ void *thread_routine(void* arg) {
   ret = add_cl(client);
   if (ret == -1) pthread_exit(NULL);
 
-  client->log = new_logger(name, "log");
+  client->log = new_logger(name, PATH);
   log = client->log;
 
   write_logger(log, "Il client si è connesso\n");
@@ -255,9 +255,6 @@ void *thread_routine(void* arg) {
           ret = send_message((*speaker)->descriptor, data, ret, N_FLAG);
           if (ret == -1) {
             remove_cl((*speaker)->id);
-            write_logger(log, "Il client si è disconnesso in modo anomalo\n");
-            close_logger(log);
-            pthread_exit(NULL);
           }
           write_logger(log, "Tentativo di connessione con %s\n", (*speaker)->name);
           write_logger((*speaker)->log, "Tentativo di connessione da parte di %s\n", name);

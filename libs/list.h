@@ -1,6 +1,5 @@
 #ifndef LIST_H
 #define LIST_H
-#include <semaphore.h>
 #include "logger.h"
 
 #define LIST_LEN_NAME 11

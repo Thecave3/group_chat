@@ -7,8 +7,6 @@
 #include <netinet/in.h>
 #include "protocol.h"
 
-#define DEBUG 1
-
 #define MAX_CONN_QUEUE 10
 
 void server_init(int* sock_desc, struct sockaddr_in* sock_addr) {
@@ -29,11 +27,7 @@ int recv_message(int socket_desc, char* buffer,  int buffer_len, int flags) {
     ret = recv(socket_desc, buffer + bytes_read, 1, 0);
     if (ret == -1 && errno == EINTR)
 			continue;
-    if (ret <= 0) {
-			if (DEBUG && ret == -1) perror("recv_message");
-      if (DEBUG && ret == 0) perror("Connection closed by client");
-      return -1;
-    }
+    if (ret == -1) return -1;
     bytes_read++;
 	  if (buffer[bytes_read-1] == '\0' && (flags & 1) == 1) break;
     if (buffer[bytes_read-1] == '\n' && (flags & 2) == 2) break;
@@ -49,10 +43,7 @@ int send_message(int socket_desc, char* buffer, int buffer_len, int flags) {
   while (bytes_send < buffer_len) {
     ret = send(socket_desc, buffer + bytes_send, 1, 0);
     if (ret == -1 && errno == EINTR) continue;
-    if (ret == -1) {
-	    if (DEBUG) perror("send_message");
-      return -1;
-    }
+    if (ret == -1) return -1;
     bytes_send ++;
     if (buffer[bytes_send-1] == '\0' && (flags & 1) == 1) break;
     if (buffer[bytes_send-1] == '\n' && (flags & 2) == 2) break;

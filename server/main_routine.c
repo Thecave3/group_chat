@@ -15,10 +15,9 @@
 #include "../libs/logger.h"
 #include "../libs/list.h"
 #include "../libs/protocol.h"
+#include "../libs/server_common.h"
 
-#define EXTINTED  2
-#define ALIVE     1
-#define ZOMBIE    0
+#define TIMEEX    600
 
 typedef struct thread_s {
   pthread_t* thread_handler;
@@ -74,7 +73,14 @@ void garbage_collector (int ignored) {
         close_logger(cux->thread_arg->log);
       }
       remove_cl(cux->thread_arg->id);
-      ret = shutdown (cux->thread_arg->descriptor, 2);
+      while (1) {
+        ret = close(cux->thread_arg->descriptor);
+        if (ret == -1 && errno == EINTR) continue;
+        if (ret == -1) {
+          write_logger(logger_server,"Impossibile chiudere il descrittore associato al client %s\n", cux->thread_arg->name);
+        }
+        break;
+      }
       bux = cux;
       if (cux->next == NULL && cux->prev == NULL) thread_list = NULL;
 			else if (cux->prev == NULL) {
@@ -96,7 +102,7 @@ void garbage_collector (int ignored) {
     }
     cux = cux->next;
   }
-  alarm(20);
+  alarm(TIMEEX);
 }
 
 int main_routine(int argc, char const *argv[], int folder) {
@@ -116,7 +122,7 @@ int main_routine(int argc, char const *argv[], int folder) {
 
   thread_list = NULL;
 
-  alarm(20);
+  alarm(TIMEEX);
 
   write_logger(logger_server,"Garbage Collector avviato\n");
 
