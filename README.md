@@ -32,7 +32,6 @@ sviluppare per uno dei due sistemi.
 
 ## server_linux
 
-Build 0.1
 * Mantiene una lista dei client connessi e del loro stato {ONLINE, OFFLINE}
 * Restituisce una lista di client connessi con stato ONLINE
 * Aggiunto un log del server e delle interazioni con i client su file per il monitoraggio
@@ -40,8 +39,12 @@ Build 0.1
 ## client_linux
 
 Architecture concept:
-* Client Multithread e shell utente che gestisce gli user-input e manda le requests al server
-* Interazione con il server tramite logic API integrate nella shel poggianti su chiamate C-UNIX
+* Client Multithread e shell utente che gestisce gli user-input e manda le custom-requests al server
+* Interazione con il server tramite custom API integrate nella shell poggianti su chiamate C-UNIX
+* Gestione di segnali come SIGINT e SIGPIPE:
+ - SIGINT: invia al server un segnale di chiusura client e termina il programma.
+ - SIGPIPE: termina direttamente la chat killando i thread.
+* Rappresentazione degli stati del client tramite variabili atomiche che quindi garantiscono la consistenza degli stati evitando momenti di stati non definiti in caso di scheduling da parte della CPU.
 
 Chiamate disponibili per l'utente:
 
@@ -50,3 +53,7 @@ Chiamate disponibili per l'utente:
 * clear : pulisce lo schermo
 * quit : invia un segnale di disconnessione al server e chiude il client
 * help : invoca una stampa dei comandi disponibili
+
+NB: il client non mantiene alcuna informazione sullo stato degli altri client connessi (dumb client), il server carica e gestisce ogni interazione tra i vari client.
+
+Known issue del client: la gestione grafica della list, ma è un bug prettamente dovuto all'uso di un unico terminale per input ed output.
