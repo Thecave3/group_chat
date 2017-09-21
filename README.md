@@ -34,7 +34,7 @@ sviluppare per uno dei due sistemi.
 
 Architecture concept:
 * Server multiprocesso e multithread:
-  - Il processo padre, a seconda del comando passatogli, genera un demone e una cartella nella home dell'utente per i file di log o termina il demone.
+  - Il processo padre, a seconda del comando passatogli, genera un demone e una cartella nella home dell'utente per i file di log. Se avviato con un comando diverso termina il demone.
   - Il demone si occupa di accettare nuove connessioni in ingresso, se un client si connette viene immediatamente predisposto un thread per gestire quest'ultimo.
   - Ogni thread si occupa del setup e della gestione dei comandi del client ad esso associato, nel caso di una eventuale connessione da parte di un client da o verso un altro client, dopo l'inoltro della richiesta di connessione, il thread associato reindirizzerà i messaggi a quest'ultimo e viceversa fino all'invio del messaggio "quit" da parte di uno dei due client.
 * Le strutture dati del server sono:
