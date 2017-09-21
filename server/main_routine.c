@@ -106,6 +106,7 @@ void garbage_collector (int ignored) {
     cux = cux->next;
   }
   garbage_cnt++;
+  if (garbage_cnt > CNT_TIMEX) garbage_cnt = 0;
   alarm(TIMEEX);
 }
 
