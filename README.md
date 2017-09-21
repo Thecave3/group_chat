@@ -60,11 +60,11 @@ Architecture concept:
 
 Chiamate disponibili per l'utente:
 
-* connect USER : inoltra una richiesta di chat verso l'utente identificato con il nome USER
-* list : esegue il download della lista aggiornata di utenti connessi al server
-* clear : pulisce lo schermo
-* quit : invia un segnale di disconnessione al server e chiude il client
-* help : invoca una stampa dei comandi disponibili
+* <code>connect USER</code> : inoltra una richiesta di chat verso l'utente identificato con il nome USER
+* <code>list</code> : esegue il download della lista aggiornata di utenti connessi al server
+* <code>clear</code> : pulisce lo schermo
+* <code>quit</code> : invia un segnale di disconnessione al server e chiude il client
+* <code>help</code> : invoca una stampa dei comandi disponibili
 
 NB: il client non mantiene alcuna informazione sullo stato degli altri client connessi (dumb client), il server carica e gestisce ogni interazione tra i vari client.
 
