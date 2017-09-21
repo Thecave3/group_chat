@@ -17,7 +17,8 @@
 #include "../libs/protocol.h"
 #include "../libs/server_common.h"
 
-#define TIMEEX    600
+#define TIMEEX    60
+#define CNT_TIMEX 10
 
 typedef struct thread_s {
   pthread_t* thread_handler;
@@ -29,9 +30,10 @@ typedef thread_t* thread_l;
 
 thread_l  thread_list;
 
-int server_desc ,
+int server_desc,
     client_desc,
     client_addr_len,
+    garbage_cnt,
     ret;
 
 struct sockaddr_in  server_addr ,
@@ -63,6 +65,7 @@ void garbage_collector (int ignored) {
   int ret;
   cux = thread_list;
   while(cux != NULL) {
+    if (garbage_cnt < CNT_TIMEX && cux->thread_arg->alive == ZOMBIE) continue;
     if (cux->thread_arg->alive == ALIVE) cux->thread_arg->alive = ZOMBIE;
     else {
       if (cux->thread_arg->alive == ZOMBIE) {
@@ -102,6 +105,7 @@ void garbage_collector (int ignored) {
     }
     cux = cux->next;
   }
+  garbage_cnt++;
   alarm(TIMEEX);
 }
 
