@@ -11,8 +11,21 @@ void kill_handler() {
   shouldStop = 1;
   char* close_command = QUIT;
   size_t close_command_len = strlen(close_command);
+  char* no_command = NO;
+  size_t no_command_len = strlen(close_command);
   int bytes_written = 0;
   int ret;
+  if (isRequest == 1) while (1) {
+    ret = write(socket_desc,no_command+bytes_written,no_command_len);
+    if (ret==-1) {
+      if (errno == EINTR) {
+        fprintf(stderr,"Errore scrittura dati, ripeto\n");
+        continue;
+      }
+      ERROR_HELPER(ret,"Errore scrittura dati fatale, panico");
+    } else if ((bytes_written += ret) == close_command_len) break;
+  }
+  bytes_written = 0;
   while (1) {
     ret = write(socket_desc,close_command+bytes_written,close_command_len);
     if (ret==-1) {

@@ -29,7 +29,7 @@ void *thread_routine(void* arg) {
   logger_t  log;
   int       ret;
   int       query_size;
-  int       first_time = 0;
+  int       init_connect = 0;
   int       descriptor = client->descriptor;
   int       *id = &client->id;
   int       *status = &client->status;
@@ -81,41 +81,12 @@ void *thread_routine(void* arg) {
       close_logger(log);
       pthread_exit(NULL);
     }
+    fprintf(stderr, "%s: %s", name, data);
+
     *alive = ALIVE;
+    if (*status == ONLINE) init_connect = 0;
 
-    if (strncmp(data, QUIT, strlen(QUIT)) == 0 && *status == BUSY) {
-      write_logger((*speaker)->log, "Il client %s ha terminato la chat\n", name);
-      write_logger(log, "Il client ha terminato la chat\n", name);
-      if (sem_wait(&(*speaker)->sem) == -1) {
-        remove_cl((*speaker)->id);
-      }
-      (*speaker)->speaker = NULL;
-      (*speaker)->status = ONLINE;
-      if (sem_post(&(*speaker)->sem) == -1) {
-        remove_cl((*speaker)->id);
-      }
-      ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
-      if (ret == -1) {
-        remove_cl((*speaker)->id);
-      }
-      if (sem_wait(sem) == -1) {
-        remove_cl(*id);
-        write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
-        close_logger(log);
-        pthread_exit(NULL);
-      }
-      *speaker = NULL;
-      *status = ONLINE;
-      if (sem_post(sem) == -1) {
-        remove_cl(*id);
-        write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
-        close_logger(log);
-        pthread_exit(NULL);
-      }
-      first_time = 0;
-    }
-
-    else if (*status == BUSY && strncmp(data, NO, strlen(NO)) == 0) {
+    if (*status == BUSY && strncmp(data, NO, strlen(NO)) == 0) {
       write_logger((*speaker)->log, "Il client %s ha rifiutato la chat\n", name);
       write_logger(log, "Il client ha rifiutato la chat\n", name);
       if (sem_wait(&(*speaker)->sem) == -1) {
@@ -144,19 +115,53 @@ void *thread_routine(void* arg) {
         close_logger(log);
         pthread_exit(NULL);
       }
+      continue;
     }
 
-    else if (*status == BUSY) {
-      if (first_time == 0 && strncmp(data, YES, strlen(YES)) == 0) {
+    else if (*status == BUSY && strncmp(data, QUIT, strlen(QUIT)) == 0) {
+      write_logger((*speaker)->log, "Il client %s ha terminato la chat\n", name);
+      write_logger(log, "Il client ha terminato la chat\n", name);
+      if (sem_wait(&(*speaker)->sem) == -1) {
+        remove_cl((*speaker)->id);
+      }
+      (*speaker)->speaker = NULL;
+      (*speaker)->status = ONLINE;
+      if (sem_post(&(*speaker)->sem) == -1) {
+        remove_cl((*speaker)->id);
+      }
+      ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
+      if (ret == -1) {
+        remove_cl((*speaker)->id);
+      }
+      if (sem_wait(sem) == -1) {
+        remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_wait\n");
+        close_logger(log);
+        pthread_exit(NULL);
+      }
+      *speaker = NULL;
+      *status = ONLINE;
+      if (sem_post(sem) == -1) {
+        remove_cl(*id);
+        write_logger(log, "Errore critito: impossibile effettuare la sem_post\n");
+        close_logger(log);
+        pthread_exit(NULL);
+      }
+      continue;
+    }
+
+    else if (*status == BUSY && (init_connect == 1 || strncmp(data, YES, strlen(YES)) == 0)) {
+      if (init_connect == 0 && strncmp(data, YES, strlen(YES)) == 0) {
         write_logger(log, "Il client ha accettato la chat\n");
         write_logger((*speaker)->log, "Il client %s ha accettato la chat\n", name);
-        first_time++;
+        init_connect = 1;
       }
       ret = send_message((*speaker)->descriptor, data, BUFFER_LEN, N_FLAG);
       (*speaker)->alive = ALIVE;
       if (ret == -1) {
         remove_cl((*speaker)->id);
       }
+      continue;
     }
 
     else if (*status == ONLINE && strncmp(data, QUIT, strlen(QUIT)) == 0) {
@@ -176,6 +181,7 @@ void *thread_routine(void* arg) {
         close_logger(log);
         pthread_exit(NULL);
       }
+      continue;
     }
 
     else if (*status == ONLINE && strncmp(CONNECT, data, (strlen(CONNECT) - 1))== 0) {
@@ -242,15 +248,18 @@ void *thread_routine(void* arg) {
           close_logger(log);
           pthread_exit(NULL);
         }
+        // Controllo dello stato del client
         if (sem_wait(&(*speaker)->sem) == -1) {
           remove_cl((*speaker)->id);
         }
+        // Se e' libero inoltro la richiesta di connessione
         if ((*speaker)->status == ONLINE) {
           (*speaker)->speaker = client;
           (*speaker)->status = BUSY;
           if (sem_post(&(*speaker)->sem) == -1) {
             remove_cl((*speaker)->id);
           }
+          init_connect = 1;
           data[ret - 1] = '\n';
           ret = send_message((*speaker)->descriptor, data, ret, N_FLAG);
           if (ret == -1) {
@@ -259,6 +268,7 @@ void *thread_routine(void* arg) {
           write_logger(log, "Tentativo di connessione con %s\n", (*speaker)->name);
           write_logger((*speaker)->log, "Tentativo di connessione da parte di %s\n", name);
         }
+        // Se e' occupato invio un messaggio di errore
         else {
           if (sem_post(&(*speaker)->sem) == -1) {
             remove_cl((*speaker)->id);
@@ -290,7 +300,12 @@ void *thread_routine(void* arg) {
           write_logger(log, "Tentativo di connessione con un client occupato\n");
         }
       }
+      continue;
     }
+    remove_cl(*id);
+    write_logger(log, "Errore critito: comando non riconosciuto dal server\n");
+    close_logger(log);
+    break;
   }
   pthread_exit(NULL);
 }

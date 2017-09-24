@@ -9,6 +9,7 @@ typedef struct client_s {
   int       descriptor;
   int       status;
   int       alive;
+  int       init_connect;
   sem_t     sem;
   logger_t  log;
   char      name[LIST_LEN_NAME];
